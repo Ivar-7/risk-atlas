@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { EyeIcon, EyeOffIcon, Lock, Mail, Waves } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Lock, Mail } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { navigate } from "@/App";
 
@@ -57,9 +57,9 @@ export function LoginPage1() {
         <Card className="relative w-full max-w-md ring-0 p-8 shadow-2xl">
           <div className="mb-8 flex flex-col items-center">
             <div className="my-4 flex justify-center">
-              <div className="bg-secondary relative size-14 rounded-full border">
+              <div className="bg-secondary relative size-14 overflow-hidden rounded-xl border border-border/60">
                 <div className="flex h-full items-center justify-center">
-                  <Waves className="size-8 text-primary" aria-hidden="true" />
+                  <img src="/assets/icon-192.png" alt="Risk Atlas" className="size-full object-cover" />
                 </div>
               </div>
             </div>

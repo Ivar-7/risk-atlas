@@ -26,17 +26,7 @@ export function TopNav() {
           className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-white"
           aria-label={`${brand.wordmark} home`}
         >
-          <svg width="24" height="24" viewBox="0 0 40 40" fill="none" aria-hidden>
-            <path d="M20 2.5 35 11v18L20 37.5 5 29V11Z" stroke="#a7f3d0" strokeWidth="2.2" strokeLinejoin="round" />
-            <path
-              d="M9 24c4.8-3.8 8.7-3.8 13.2 0 3.1 2.6 5.8 2.6 8.8.5M9 18.1c4.8-3.8 8.7-3.8 13.2 0 3.1 2.6 5.8 2.6 8.8.5"
-              stroke="#a7f3d0"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <circle cx="28.5" cy="11.8" r="1.4" fill="#a7f3d0" />
-          </svg>
-          {brand.wordmark}
+          <img src="/assets/logo-horizontal-dark.svg" alt="" aria-hidden="true" className="h-8 w-auto" />
         </a>
 
         <ul className="ml-auto hidden items-center gap-1 lg:flex">

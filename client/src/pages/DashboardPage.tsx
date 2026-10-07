@@ -80,7 +80,7 @@ export default function DashboardPage() {
         <div className="flex shrink-0 items-center gap-3">
           <button type="button" onClick={() => setSearchOpen(true)} className="flex h-8 items-center gap-2 rounded-md bg-white/5 px-2.5 text-xs text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground sm:w-52" aria-label="Search dashboard sections"><Search size={15} /><span className="hidden flex-1 text-left sm:inline">Search sections</span><kbd className="hidden rounded border border-border px-1 text-[10px] sm:inline">⌘K</kbd></button>
           <span className="hidden items-center gap-2 text-xs text-muted-foreground md:flex"><span className={`h-1.5 w-1.5 rounded-full ${run ? 'bg-primary' : 'bg-amber-300'}`} />{run ? 'API connected' : loading ? 'Connecting…' : 'API unavailable'}</span>
-          <span className="flex size-8 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary" aria-label="Risk Atlas">RA</span>
+          <img src="/assets/icon-192.png" alt="Risk Atlas" className="size-8 rounded-full" />
         </div>
       </header>
 

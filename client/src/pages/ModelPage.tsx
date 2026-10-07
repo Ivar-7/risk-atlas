@@ -91,7 +91,7 @@ export default function ModelPage() {
 
   return <div className="min-h-screen bg-[#0c1013] font-sans text-white lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
     <aside className={`${menuOpen ? 'flex' : 'hidden'} fixed inset-0 z-40 flex-col border-r border-white/10 bg-[#10171a] px-5 pb-6 pt-7 lg:sticky lg:top-0 lg:flex lg:h-screen`}>
-      <div className="flex items-center justify-between"><span className="text-lg font-semibold tracking-tight text-emerald-100">◇ risk atlas</span><button type="button" className="lg:hidden" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X size={20} /></button></div>
+      <div className="flex items-center justify-between"><img src="/assets/logo-horizontal-dark.svg" alt="Risk Atlas" className="h-9 w-auto" /><button type="button" className="lg:hidden" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X size={20} /></button></div>
       <p className="mt-12 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">Model workspace</p>
       <nav className="mt-3 space-y-1" aria-label="Model navigation">
         {tabs.map(({ label, icon: Icon }) => <button key={label} type="button" onClick={() => { setTab(label); setMenuOpen(false) }} className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm transition-colors ${tab === label ? 'bg-emerald-200/10 text-emerald-100' : 'text-white/50 hover:bg-white/5 hover:text-white'}`}><Icon size={18} strokeWidth={1.7} />{label}</button>)}

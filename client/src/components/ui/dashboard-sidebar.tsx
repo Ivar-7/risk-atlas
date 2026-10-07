@@ -70,7 +70,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose 
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => setSwitcherOpen((value) => !value)} aria-expanded={switcherOpen} aria-label="Switch workspace" className="group flex min-w-0 flex-1 items-center justify-between rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5">
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-[13px] font-semibold text-primary-foreground">RA</span>
+            <img src="/assets/icon-192.png" alt="" aria-hidden="true" className="h-8 w-8 shrink-0 rounded-md" />
             <span className="flex min-w-0 flex-col"><span className="truncate text-[13px] font-medium leading-none text-foreground">Risk Atlas</span><span className="mt-1 text-[11px] leading-none text-muted-foreground">Nairobi flood model</span></span>
           </span>
           <ChevronDown size={16} className="shrink-0 text-muted-foreground/60" strokeWidth={1.5} />
