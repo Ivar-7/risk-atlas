@@ -1,28 +1,16 @@
-import { useEffect, useState } from 'react'
-import LandingPage from './pages/LandingPage'
+import { lazy, Suspense } from 'react'
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 
 export function navigate(path: string) {
-  if (window.location.pathname !== path) window.history.pushState({}, '', path)
-  window.dispatchEvent(new PopStateEvent('popstate'))
-  window.scrollTo({ top: 0, behavior: 'instant' })
+  window.location.assign(path === '/' ? '/' : `${path.replace(/\/$/, '')}/`)
 }
 
 export default function App() {
-  const [path, setPath] = useState(window.location.pathname)
-
-  useEffect(() => {
-    const onLocation = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', onLocation)
-    return () => window.removeEventListener('popstate', onLocation)
-  }, [])
-
-  useEffect(() => {
-    document.title = path === '/login' ? 'Risk Atlas — Sign in' : path === '/dashboard' ? 'Risk Atlas — Nairobi Flood Dashboard' : 'Risk Atlas — Nairobi Flood Catastrophe Model'
-  }, [path])
-
-  if (path === '/login') return <LoginPage />
-  if (path === '/dashboard') return <DashboardPage />
-  return <LandingPage />
+  if (window.location.pathname.startsWith('/login')) return <LoginPage />
+  if (window.location.pathname.startsWith('/dashboard')) {
+    return <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#0c1013] text-sm text-white/60">Loading Risk Atlas workspace…</div>}><DashboardPage /></Suspense>
+  }
+  return null
 }

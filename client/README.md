@@ -1,6 +1,6 @@
 # Risk Atlas client
 
-React, TypeScript, Vite, Tailwind CSS, and Lucide UI prototype for the Kenya Re hackathon.
+The homepage is a standalone HTML page. The existing Risk Atlas login and dashboard remain React, TypeScript, Vite, and Tailwind pages.
 
 ## Run locally
 
@@ -9,12 +9,14 @@ npm install
 npm run dev
 ```
 
-The app has three routes:
+The site has three page entries:
 
-- `/` — dark Risk Atlas landing page with a scroll-scrubbed flood scene and Nairobi CAT model story.
-- `/login` — Risk Atlas sign-in design and direct demo access.
-- `/dashboard` — responsive Nairobi flood risk overview with illustrative portfolio data and three flood scenarios.
+- `/` — self-contained Risk Atlas video hero in `index.html`. It can also be opened directly without a build step.
+- `/login/` — Risk Atlas sign-in design and direct demo access.
+- `/dashboard/` — responsive Nairobi flood risk overview using synthetic exposure data.
 
-The login form currently opens the demo dashboard; account authentication is not connected. Dashboard values are sample data. The hero video uses the specified CloudFront URL first, with `/hero.mp4` as a local fallback. `/hero-poster.jpg` is a local first-frame poster.
+The homepage uses the CloudFront video and poster URLs specified in the design prompt. Its navigation and calls to action link to the Nairobi dashboard, its sections, and sign-in.
+
+The login form currently opens the demo dashboard; account authentication is not connected. Dashboard values are illustrative.
 
 For a production build, run `npm run build`.
