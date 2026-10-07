@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import LoginPage from './pages/LoginPage'
+import DashboardLoader from './components/ui/v-skeleton-8'
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const ModelPage = lazy(() => import('./pages/ModelPage'))
@@ -11,7 +12,7 @@ export function navigate(path: string) {
 export default function App() {
   if (window.location.pathname.startsWith('/login')) return <LoginPage />
   if (window.location.pathname.startsWith('/dashboard')) {
-    return <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#0c1013] text-sm text-white/60">Loading Risk Atlas workspace…</div>}><DashboardPage /></Suspense>
+    return <Suspense fallback={<DashboardLoader />}><DashboardPage /></Suspense>
   }
   if (window.location.pathname.startsWith('/app')) {
     return <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#0c1013] text-sm text-white/60">Loading model workspace…</div>}><ModelPage /></Suspense>
