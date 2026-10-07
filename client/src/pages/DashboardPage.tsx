@@ -51,7 +51,7 @@ export default function DashboardPage() {
             </a>
           ))}
         </nav>
-        <div className="mt-auto rounded-xl border border-emerald-200/15 bg-emerald-200/[0.055] p-4">
+        <div className="mt-auto rounded-xl border border-emerald-200/15 bg-emerald-200/5.5 p-4">
           <div className="flex items-center gap-2 text-sm text-emerald-100"><ShieldCheck size={17} /> Prototype workspace</div>
           <p className="mt-2 text-xs leading-5 text-white/45">600 synthetic buildings. Five susceptibility masks. No real client portfolio or measured flood depth.</p>
         </div>
@@ -59,7 +59,7 @@ export default function DashboardPage() {
       </aside>
 
       <div className="min-w-0">
-        <header className="flex h-[72px] items-center justify-between gap-4 border-b border-white/10 px-5 sm:px-8 xl:px-10">
+        <header className="flex h-18 items-center justify-between gap-4 border-b border-white/10 px-5 sm:px-8 xl:px-10">
           <div className="flex items-center gap-3">
             <button type="button" className="rounded-md p-1 text-white/70 hover:text-white lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={21} /></button>
             <span className="hidden text-sm text-white/40 sm:inline">Risk Atlas</span><span className="hidden text-white/20 sm:inline">/</span><span className="text-sm font-medium">Nairobi flood model</span>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
             <span className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2.5 text-xs text-white/60"><BarChart3 size={15} /> Five assumed scenarios</span>
           </div>
 
-          <div className="my-7 flex items-start gap-3 rounded-xl border border-amber-200/15 bg-amber-200/[0.045] px-4 py-3 text-xs leading-5 text-amber-50/70">
+          <div className="my-7 flex items-start gap-3 rounded-xl border border-amber-200/15 bg-amber-200/4.5 px-4 py-3 text-xs leading-5 text-amber-50/70">
             <Info size={16} className="mt-0.5 shrink-0 text-amber-200/75" />
             <p><strong className="font-medium text-amber-50">Interpretation matters.</strong> The buildings are synthetic, the hazard is a relative proxy, and return periods and damage factors are provisional assumptions. These estimates are not for underwriting.</p>
           </div>
