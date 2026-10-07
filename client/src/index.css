@@ -1,8 +1,84 @@
 @import "tailwindcss";
 
+/* Streaming background curves for the login page.
+   The animation deliberately targets `stroke-dashoffset` only. Animating
+   `pathLength` (as the original framer-motion version did) forces the browser to
+   re-measure and re-tessellate the path geometry on every single frame for
+   every path. With 36 paths per layer that pinned the raster thread and the
+   page ran at ~1-8fps. A dash-offset shift is a paint-only property, so the
+   browser can composite it without recomputing geometry.
+
+   The loop is seamless because each keyframe shifts by exactly one full dash
+   period (dash + gap), so the end state is pixel-identical to the start state.
+   Negative delays mean every line is already mid-travel on first paint, which
+   is what removed the "buffering" burst of all lines starting at once. */
+@keyframes atlas-stream {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: calc(var(--atlas-period) * -1);
+  }
+}
+
+.atlas-stream {
+  animation: atlas-stream var(--atlas-duration) linear infinite;
+  animation-delay: var(--atlas-delay);
+  /* Promote to its own layer so the dash shift does not invalidate the rest of
+     the page. `contain` stops the paint from escaping the SVG box. */
+  will-change: stroke-dashoffset;
+  contain: paint;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-stream {
+    animation: none;
+    will-change: auto;
+  }
+}
+
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Inter", system-ui, sans-serif;
+
+  /* shadcn/ui semantic tokens.
+     Risk Atlas is dark-only, so the light-scheme values ARE the dark values.
+     Defining them in :root rather than under `.dark` means shadcn components
+     render correctly with no class toggling, and no component in the app has to
+     carry a `dark:` variant to look right. */
+  --color-background: #0a0a0a;
+  --color-foreground: #f4f5f4;
+  --color-card: #141416;
+  --color-card-foreground: #f4f5f4;
+  --color-popover: #141416;
+  --color-popover-foreground: #f4f5f4;
+  --color-primary: #a7f3d0;
+  --color-primary-foreground: #050807;
+  --color-secondary: #1c1d1f;
+  --color-secondary-foreground: #f4f5f4;
+  --color-muted: #16181a;
+  --color-muted-foreground: #9ba3a0;
+  --color-accent: #1f2124;
+  --color-accent-foreground: #f4f5f4;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #1a0505;
+  --color-border: #26282b;
+  --color-input: #2e3134;
+  --color-ring: #a78bfa;
+
+  --radius-lg: 0.625rem;
+  --radius-md: calc(0.625rem - 2px);
+  --radius-sm: calc(0.625rem - 4px);
+}
+
+/* shadcn's Button relies on these being defined at the element level. */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 :root {
@@ -18,6 +94,32 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; }
+
+/* Scroll reveal for the landing sections. The hidden start state lives inside a
+   no-preference query so prefers-reduced-motion users get fully visible
+   content with no transition at all. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal[data-reveal="hidden"] {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  .reveal[data-reveal] {
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal[data-reveal="shown"] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 3px;
+}
 button, input { font: inherit; }
 button { cursor: pointer; }
 ::selection { background: rgba(255, 255, 255, 0.2); }

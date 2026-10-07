@@ -3,6 +3,8 @@
 
 # Python
 venv/
+.venv/
+server/runs/
 __pycache__/
 *.pyc
 

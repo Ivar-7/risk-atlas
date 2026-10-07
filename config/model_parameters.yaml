@@ -1,0 +1,71 @@
+model:
+  name: Nairobi Urban Flood CAT
+  version: "1.0.0"
+  peril: pluvial flood
+  region: Nairobi, Kenya
+  currency: KES
+  team: Team A
+
+defaults:
+  apply_drainage_ai: true
+  free_text: ""
+  random_seed: 42
+
+# ASSUMPTION — the five rasters have no return-period years attached (problem statement Step 4).
+# Wider masks produce larger losses. Map them to rarer events so the assumed EP curve is monotone.
+return_periods:
+  common: { years: 250, annual_exceedance: 0.004, meaning: "Widest proxy mask, assumed rarest event" }
+  occasional: { years: 100, annual_exceedance: 0.01, meaning: "1-in-100 reference loss" }
+  moderate: { years: 25, annual_exceedance: 0.04, meaning: "Severe rainy-season flood" }
+  severe: { years: 10, annual_exceedance: 0.10, meaning: "Wet-decade urban flood" }
+  extreme: { years: 5, annual_exceedance: 0.20, meaning: "Narrowest proxy mask, assumed most frequent event" }
+
+# ASSUMPTION — problem statement Step 1 example: treat score 1 as 4 m, depth = score × 4 m.
+# This is not measured flood depth.
+hazard:
+  max_depth_m: 4.0
+  score_meaning: "0–1 relative pluvial susceptibility from the starter-kit proxy, not water depth"
+
+# JRC / Huizinga et al. 2017 Africa residential anchors (sourced):
+# 0.1 m → 5% damage; 1.0 m → 40% damage.
+# A single exponential k=0.51293 fits both anchors (concave, matching JRC's described shape).
+# Construction k-multipliers and caps are ADAPTATIONS for Nairobi housing classes in the synthetic file.
+# Caps follow the brief: even severe floods rarely destroy 100% of value (land/foundation remain); 80–95%.
+vulnerability:
+  source: "Huizinga, de Moel & Szewczyk (2017) JRC EUR 28552 EN, Africa residential anchors"
+  jrc_k: 0.51293
+  classes:
+    informal_iron_sheet:
+      k_multiplier: 1.45
+      cap: 0.95
+      differs_from_jrc: "Higher k: iron-sheet walls fail at shallower depth than average Africa residential."
+    semi_permanent:
+      k_multiplier: 1.10
+      cap: 0.90
+      differs_from_jrc: "Slightly higher k than JRC residential for mixed masonry/timber."
+    permanent_masonry:
+      k_multiplier: 0.85
+      cap: 0.85
+      differs_from_jrc: "Lower k: permanent masonry withstands more depth."
+    concrete_rcc:
+      k_multiplier: 0.55
+      cap: 0.70
+      differs_from_jrc: "RCC treated as more resistant than JRC residential (no Kenya RCC claims curve exists)."
+
+# AI drainage correction — uses the brief's stated proxy limitation (misses Kibera, Westlands, Lavington
+# and other drainage-driven floods). This changes hazard scores and therefore losses.
+ai_drainage:
+  named_misses:
+    - Kibera
+    - Westlands
+    - Lavington
+  kernel_sigma_km: 1.2
+  unflagged_max_hazard: 0.15
+  search_radius_km: 1.5
+# ASSUMPTION: drainage failure is more relevant to frequent pluvial flooding than to the rarest tier.
+  tier_scale:
+    common: 0.08
+    occasional: 0.12
+    moderate: 0.20
+    severe: 0.28
+    extreme: 0.35

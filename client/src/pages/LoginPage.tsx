@@ -1,5 +1,5 @@
-import NeuralAccessLogin from '../components/ui/neural-access-login'
+import { AuthPage } from '../components/ui/auth-page'
 
 export default function LoginPage() {
-  return <NeuralAccessLogin />
+  return <AuthPage />
 }

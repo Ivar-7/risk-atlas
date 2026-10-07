@@ -1,12 +1,14 @@
 import { Activity, Building2, Radar, Waves } from 'lucide-react'
-import { exposureRows, formatKes, totalExposureKes, type ScenarioSummary } from './model'
+import { money } from '../../../features/model/format'
+import type { RunResult } from '../../../features/model/types'
+import { scenarioLabel, type Scenario } from './model'
 
-export function DashboardStats({ summary }: { summary: ScenarioSummary }) {
+export function DashboardStats({ run, scenario }: { run: RunResult; scenario: Scenario }) {
   const stats = [
-    { label: 'Synthetic insured value', value: formatKes(totalExposureKes), detail: `${exposureRows.length} generated locations`, icon: Building2 },
-    { label: `${summary.scenario.label} gross loss`, value: formatKes(summary.lossKes, 2), detail: 'Illustrative proxy-based estimate', icon: Activity },
-    { label: 'Locations with proxy signal', value: `${summary.affectedCount} / ${exposureRows.length}`, detail: `${formatKes(summary.affectedTivKes)} in affected value`, icon: Waves },
-    { label: 'Hotspot validation', value: '12 / 24', detail: 'Named hotspots flagged by starter proxy', icon: Radar },
+    { label: 'Total insured value', value: money(run.metrics.total_tiv_kes), detail: `${run.metrics.locations.toLocaleString('en-KE')} locations · ${run.metrics.synthetic_locations} declared synthetic`, icon: Building2 },
+    { label: `${scenarioLabel(scenario)} gross loss`, value: money(scenario.loss_kes), detail: 'Modelled from the current run', icon: Activity },
+    { label: 'Locations with modelled loss', value: `${scenario.affected_locations} / ${run.metrics.locations}`, detail: `${money(scenario.affected_tiv_kes)} in affected value`, icon: Waves },
+    { label: 'Annual average loss', value: money(run.metrics.aal_kes), detail: 'Integrated from assumed event frequencies', icon: Radar },
   ]
 
   return <>

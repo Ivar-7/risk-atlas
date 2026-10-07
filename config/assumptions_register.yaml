@@ -1,0 +1,41 @@
+assumptions:
+  - id: DATA-001
+    provenance: SYNTHETIC
+    title: Building portfolio
+    statement: "600 locations in exposure_nairobi_with_hazard.csv are a generated starter-kit portfolio, not Kenya Re or any cedant book."
+  - id: DATA-002
+    provenance: REAL
+    title: Named flood hotspots
+    statement: "24 of Nairobi County's 37 mapped flood-prone neighbourhoods, geocoded. Used to validate the proxy and to site the drainage AI."
+  - id: DATA-003
+    provenance: PROXY
+    title: Hazard scores
+    statement: "0–1 susceptibility from terrain elevation, depressions, slope and OSM rivers. Not measured flood depth or a calibrated hydrological model. The kit states the proxy flags 12 of 24 hotspots."
+  - id: HAZ-001
+    provenance: ASSUMPTION
+    title: Score to depth
+    statement: "depth_m = susceptibility_score × 4.0 m, following the problem statement's worked example. Not observed water depth."
+  - id: HAZ-002
+    provenance: ASSUMPTION
+    title: Return periods on the five tiers
+    statement: "extreme=5y, severe=10y, moderate=25y, occasional=100y, common=250y. The starter-kit proxy masks do not carry years. Wider masks have larger losses and are assigned rarer events to make a monotone illustrative EP curve; this is not calibrated frequency evidence."
+  - id: VUL-001
+    provenance: SOURCED
+    title: JRC Africa residential anchors
+    statement: "Huizinga et al. 2017: 0.1 m → 5% and 1.0 m → 40% for Africa residential. Fitted k=0.51293 in DR=1-exp(-k·depth)."
+  - id: VUL-002
+    provenance: ASSUMPTION
+    title: Construction adaptations
+    statement: "No Kenya-specific curve exists (constraint in the brief). Informal, semi-permanent, masonry and RCC use k-multipliers and caps documented in model_parameters.yaml."
+  - id: FIN-001
+    provenance: METHOD
+    title: Ground-up loss
+    statement: "Loss = damage_ratio × tiv_kes. Treaty layers and net-of-reinsurance are out of scope per the brief."
+  - id: AI-001
+    provenance: AI
+    title: Drainage-gap hazard correction
+    statement: "A distance kernel around proxy-missed hotspots (named in the brief plus empirically unflagged sites) increases susceptibility. This changes EP losses. Toggle on/off to see the delta."
+  - id: AI-002
+    provenance: AI
+    title: Free-text exposure rows
+    statement: "Plain-English portfolio text is parsed into extra synthetic buildings and run through the same pipeline, changing total exposure and loss."
