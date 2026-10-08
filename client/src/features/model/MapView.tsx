@@ -2,12 +2,12 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LocationRow, RunResult } from "./types";
+import { chartTheme } from "../../lib/chartTheme";
 
 function colorFor(lossCost: number) {
-  if (lossCost >= 4) return "#fb7185";
-  if (lossCost >= 1.5) return "#fbbf24";
-  if (lossCost >= 0.4) return "#67e8f9";
-  return "#a7f3d0";
+  if (lossCost >= 4) return chartTheme.sequential[2];
+  if (lossCost >= 1.5) return chartTheme.sequential[1];
+  return chartTheme.sequential[0];
 }
 
 type Props = {
@@ -42,7 +42,7 @@ export default function MapView({ run, selected, onSelect }: Props) {
     run.hotspots.forEach((h) => {
       L.circleMarker([h.lat, h.lon], {
         radius: 10,
-        color: "#a7f3d0",
+        color: chartTheme.success,
         weight: 1,
         fillOpacity: 0.08,
       })
@@ -65,5 +65,5 @@ export default function MapView({ run, selected, onSelect }: Props) {
     };
   }, [run, selected, onSelect]);
 
-  return <div className="h-[360px] w-full rounded-xl bg-[#0e181b]" ref={ref} />;
+  return <div className="h-[360px] w-full rounded-xl bg-surface-alt" ref={ref} />;
 }

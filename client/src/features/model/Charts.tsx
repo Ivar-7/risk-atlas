@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
@@ -12,6 +13,7 @@ import {
 } from "recharts";
 import type { RunResult } from "./types";
 import { clsLabel, money } from "./format";
+import { chartTheme, housingClassColor } from "../../lib/chartTheme";
 
 export function EpChart({ run }: { run: RunResult }) {
   const data = run.ep_curve.map((row) => ({
@@ -22,13 +24,13 @@ export function EpChart({ run }: { run: RunResult }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data}>
-        <CartesianGrid stroke="rgba(255,255,255,0.08)" />
-        <XAxis dataKey="rp" tick={{ fill: "#82908d", fontSize: 11 }} label={{ value: "Assumed return period (years)", fill: "#82908d", fontSize: 11, position: "insideBottom", offset: -2 }} />
-        <YAxis tickFormatter={(v) => money(Number(v))} tick={{ fill: "#82908d", fontSize: 11 }} width={88} />
-        <Tooltip formatter={(v) => money(Number(v))} contentStyle={{ background: "#172126", border: "1px solid rgba(255,255,255,.15)", borderRadius: 10 }} />
-        <Legend />
-        <Line type="monotone" dataKey="withAI" stroke="#a7f3d0" strokeWidth={2} name="Loss (current run)" />
-        <Line type="monotone" dataKey="proxyOnly" stroke="#67e8f9" strokeDasharray="4 4" strokeWidth={2} name="Proxy only (no drainage rule)" />
+        <CartesianGrid stroke={chartTheme.grid} strokeWidth={1} />
+        <XAxis dataKey="rp" axisLine={{ stroke: chartTheme.axis }} tick={{ fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} label={{ value: "Assumed return period (years)", fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize, position: "insideBottom", offset: -2 }} />
+        <YAxis tickFormatter={(v) => money(Number(v))} axisLine={{ stroke: chartTheme.axis }} tick={{ fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} width={88} />
+        <Tooltip formatter={(v) => money(Number(v))} contentStyle={chartTheme.tooltip.contentStyle} labelStyle={chartTheme.tooltip.labelStyle} />
+        <Legend wrapperStyle={{ color: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} />
+        <Line type="monotone" dataKey="withAI" stroke={chartTheme.primary} strokeWidth={2.5} name="Loss (current run)" />
+        <Line type="monotone" dataKey="proxyOnly" stroke={chartTheme.comparison} strokeDasharray="4 4" strokeWidth={2} name="Proxy only (no drainage rule)" />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -38,11 +40,11 @@ export function ClassChart({ run }: { run: RunResult }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={run.by_housing_class.map((r) => ({ ...r, name: clsLabel(r.housing_class) }))} layout="vertical" margin={{ left: 20, right: 12 }}>
-        <CartesianGrid stroke="rgba(255,255,255,0.08)" />
-        <XAxis type="number" tickFormatter={(v) => money(Number(v))} tick={{ fill: "#82908d", fontSize: 11 }} />
-        <YAxis type="category" dataKey="name" tick={{ fill: "#82908d", fontSize: 11 }} width={130} />
-        <Tooltip formatter={(v) => money(Number(v))} contentStyle={{ background: "#172126", border: "1px solid rgba(255,255,255,.15)", borderRadius: 10 }} />
-        <Bar dataKey="aal_kes" fill="#a7f3d0" name="AAL" radius={[0, 6, 6, 0]} />
+        <CartesianGrid stroke={chartTheme.grid} strokeWidth={1} />
+        <XAxis type="number" tickFormatter={(v) => money(Number(v))} axisLine={{ stroke: chartTheme.axis }} tick={{ fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} />
+        <YAxis type="category" dataKey="name" axisLine={{ stroke: chartTheme.axis }} tick={{ fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} width={130} />
+        <Tooltip formatter={(v) => money(Number(v))} contentStyle={chartTheme.tooltip.contentStyle} labelStyle={chartTheme.tooltip.labelStyle} />
+        <Bar dataKey="aal_kes" fill={chartTheme.navy} name="AAL" radius={[0, 6, 6, 0]}>{run.by_housing_class.map((row) => <Cell key={row.housing_class} fill={housingClassColor(row.housing_class)} />)}</Bar>
       </BarChart>
     </ResponsiveContainer>
   );
@@ -56,11 +58,11 @@ export function ShapGlobal({ run }: { run: RunResult }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} layout="vertical" margin={{ left: 110 }}>
-        <CartesianGrid stroke="rgba(255,255,255,0.08)" />
-        <XAxis type="number" tickFormatter={(v) => money(Number(v))} tick={{ fill: "#82908d", fontSize: 11 }} />
-        <YAxis type="category" dataKey="name" tick={{ fill: "#82908d", fontSize: 11 }} width={110} />
-        <Tooltip formatter={(v) => money(Number(v))} contentStyle={{ background: "#172126", border: "1px solid rgba(255,255,255,.15)", borderRadius: 10 }} />
-        <Bar dataKey="value" fill="#67e8f9" name="Mean |SHAP|" radius={[0, 6, 6, 0]} />
+        <CartesianGrid stroke={chartTheme.grid} strokeWidth={1} />
+        <XAxis type="number" tickFormatter={(v) => money(Number(v))} axisLine={{ stroke: chartTheme.axis }} tick={{ fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} />
+        <YAxis type="category" dataKey="name" axisLine={{ stroke: chartTheme.axis }} tick={{ fill: chartTheme.axisLabel, fontSize: chartTheme.fontSize }} width={110} />
+        <Tooltip formatter={(v) => money(Number(v))} contentStyle={chartTheme.tooltip.contentStyle} labelStyle={chartTheme.tooltip.labelStyle} />
+        <Bar dataKey="value" fill={chartTheme.comparison} name="Mean |SHAP|" radius={[0, 6, 6, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

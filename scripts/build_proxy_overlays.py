@@ -17,9 +17,17 @@ for tier in ('common', 'occasional', 'moderate', 'severe', 'extreme'):
         values = np.asarray(raster, dtype=np.float32)
     strength = np.clip(values, 0, 1)
     rgba = np.zeros((*strength.shape, 4), dtype=np.uint8)
-    rgba[..., 0] = 8
-    rgba[..., 1] = 150
-    rgba[..., 2] = 215
+    low = np.array([253, 232, 238], dtype=np.float32)
+    middle = np.array([216, 24, 75], dtype=np.float32)
+    high = np.array([122, 12, 40], dtype=np.float32)
+    lower_mix = np.clip(strength * 2, 0, 1)[..., None]
+    upper_mix = np.clip((strength - 0.5) * 2, 0, 1)[..., None]
+    colors = np.where(
+        (strength <= 0.5)[..., None],
+        low + (middle - low) * lower_mix,
+        middle + (high - middle) * upper_mix,
+    )
+    rgba[..., :3] = np.rint(colors).astype(np.uint8)
     rgba[..., 3] = np.where(strength > 0, 65 + strength * 125, 0).astype(np.uint8)
     target = out / f'proxy-{tier}.png'
     Image.fromarray(rgba, 'RGBA').save(target, optimize=True)

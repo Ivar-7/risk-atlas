@@ -1,4 +1,5 @@
 import type { LocationRow, RunResult } from '../../../features/model/types'
+import { housingClassColor } from '../../../lib/chartTheme'
 
 export type Scenario = RunResult['scenarios'][number]
 
@@ -34,8 +35,8 @@ export function scenarioLabel(scenario: Scenario): string {
   return `1-in-${scenario.return_period_years}`
 }
 
-export function constructionColor(index: number): string {
-  return ['#67e8f9', '#a7f3d0', '#fcd34d', '#c4b5fd'][index % 4]
+export function constructionColor(housingClass: string): string {
+  return housingClassColor(housingClass)
 }
 
 export function downloadScenario(run: RunResult, scenario: Scenario): void {

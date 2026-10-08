@@ -4,11 +4,33 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Inter", system-ui, sans-serif;
 
-  /* shadcn/ui semantic tokens.
-     Risk Atlas is dark-only, so the light-scheme values ARE the dark values.
-     Defining them in :root rather than under `.dark` means shadcn components
-     render correctly with no class toggling, and no component in the app has to
-     carry a `dark:` variant to look right. */
+  --color-bg: #F4F6FA;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #EAF0F8;
+  --color-border: #E3E7EE;
+  --color-text: #10294F;
+  --color-text-muted: #5B6B85;
+  --color-accent: #D8184B;
+  --color-accent-hover: #B8123D;
+  --color-on-accent: #FFFFFF;
+  --color-focus: #10294F;
+  --color-input-border: #D4DAE5;
+  --color-brand-navy: #10294F;
+  --color-brand-crimson: #D8184B;
+  --color-brand-grey: #B5B8BD;
+  --color-steel-blue: #3B5A8C;
+  --color-success: #1E7F5C;
+  --color-success-tint: #E8F4EE;
+  --color-warning: #A15C00;
+  --color-warning-tint: #FFF3DF;
+  --color-danger: #B3123A;
+  --color-danger-tint: #FBE9EE;
+  --color-sequential-low: #FDE8EE;
+  --color-sequential-mid: #D8184B;
+  --color-sequential-high: #7A0C28;
+  --shadow-dashboard: 0 1px 2px rgba(16, 41, 79, 0.06), 0 8px 24px rgba(16, 41, 79, 0.05);
+
+  /* Legacy application tokens remain available outside the dashboard. */
   --color-background: #0a0a0a;
   --color-foreground: #f4f5f4;
   --color-card: #141416;
@@ -45,6 +67,7 @@
 }
 
 :root {
+  color-scheme: light;
   font-family: "Inter", system-ui, sans-serif;
   color: #fff;
   background: #0a0a0a;
@@ -54,15 +77,93 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.dashboard-theme {
+  color-scheme: light;
+  --color-accent: var(--color-brand-crimson);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: var(--color-on-accent);
+  --color-secondary: var(--color-surface-alt);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted: var(--color-surface-alt);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-surface);
+  --color-border: #E3E7EE;
+  --color-input: var(--color-input-border);
+  --color-ring: var(--color-focus);
+}
+
+.dashboard-theme :is(input:not([type="checkbox"]), textarea, select) {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-input-border);
+}
+
+.dashboard-theme :is(input, textarea)::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dashboard-theme :is(input, textarea, select):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dashboard-theme table {
+  border-collapse: collapse;
+}
+
+.dashboard-theme thead {
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-alt);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-theme thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.625rem;
+  background-color: var(--color-surface-alt);
+}
+
+.dashboard-theme tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 120ms ease;
+}
+
+.dashboard-theme tbody tr:hover {
+  background-color: var(--color-bg);
+}
+
+.dashboard-theme :is(.leaflet-tooltip, .leaflet-popup-content-wrapper, .leaflet-popup-tip) {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-dashboard);
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; }
 
 a:focus-visible,
 button:focus-visible,
-summary:focus-visible {
-  outline: 2px solid #a78bfa;
-  outline-offset: 3px;
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 button, input { font: inherit; }
 button { cursor: pointer; }

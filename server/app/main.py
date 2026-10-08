@@ -7,11 +7,10 @@ import os
 from time import perf_counter
 from typing import Any
 from uuid import uuid4
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.audit.ledger import append_run, read_ledger, verify_chain
-from app.clerk_auth import require_auth
 from app.database import configured as database_configured, initialize as initialize_database, load_latest_run, load_run, save_run
 from app.engine.config_load import load_assumptions, load_parameters
 from app.engine.ingestion import IngestedData, load_portfolio
@@ -67,7 +66,7 @@ def health():
     return {"status": "ok", "locations": PORTFOLIO.row_count if PORTFOLIO else 0, "latest_run_id": LATEST, "database_configured": database_configured()}
 
 
-@app.get("/api/defaults", dependencies=[Depends(require_auth)])
+@app.get("/api/defaults")
 def defaults():
     params = load_parameters()
     return {
@@ -80,12 +79,12 @@ def defaults():
     }
 
 
-@app.get("/api/capabilities", dependencies=[Depends(require_auth)])
+@app.get("/api/capabilities")
 def capabilities():
     return {"ai_exposure_available": ai_available()}
 
 
-@app.post('/api/documents/analyze', dependencies=[Depends(require_auth)])
+@app.post('/api/documents/analyze')
 async def analyze_document(file: UploadFile = File(...)):
     try:
         started = perf_counter()
@@ -99,12 +98,12 @@ async def analyze_document(file: UploadFile = File(...)):
         await file.close()
 
 
-@app.post('/api/loss/calculate', dependencies=[Depends(require_auth)])
+@app.post('/api/loss/calculate')
 def calculate_document_loss(terms: LossTerms):
     return {key: str(value) if isinstance(value, Decimal) else value for key, value in calculate_loss(terms).items()}
 
 
-@app.post("/api/exposure/preview", dependencies=[Depends(require_auth)])
+@app.post("/api/exposure/preview")
 def preview(body: PreviewRequest):
     try:
         result = preview_exposure(body.free_text, PORTFOLIO.hotspots)
@@ -119,7 +118,7 @@ def preview(body: PreviewRequest):
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.post("/api/runs", dependencies=[Depends(require_auth)])
+@app.post("/api/runs")
 def create_run(body: RunRequest):
     global LATEST
     try:
@@ -148,7 +147,7 @@ def create_run(body: RunRequest):
     return payload
 
 
-@app.get("/api/runs/latest", dependencies=[Depends(require_auth)])
+@app.get("/api/runs/latest")
 def latest_run():
     result = STORE.get(LATEST or "") or load_latest_run()
     if not result:
@@ -156,7 +155,7 @@ def latest_run():
     return _public(result)
 
 
-@app.get("/api/runs/{run_id}", dependencies=[Depends(require_auth)])
+@app.get("/api/runs/{run_id}")
 def get_run(run_id: str):
     result = STORE.get(run_id) or load_run(run_id)
     if not result:
@@ -164,7 +163,7 @@ def get_run(run_id: str):
     return _public(result)
 
 
-@app.get("/api/runs/{run_id}/explain/{loc_id}", dependencies=[Depends(require_auth)])
+@app.get("/api/runs/{run_id}/explain/{loc_id}")
 def explain_location(run_id: str, loc_id: str):
     result = STORE.get(run_id) or load_run(run_id)
     if not result:
@@ -176,6 +175,6 @@ def explain_location(run_id: str, loc_id: str):
     return {"location": location, **explanation}
 
 
-@app.get("/api/audit", dependencies=[Depends(require_auth)])
+@app.get("/api/audit")
 def audit(limit: int = 40):
     return {"ledger": read_ledger(limit), "chain": verify_chain()}

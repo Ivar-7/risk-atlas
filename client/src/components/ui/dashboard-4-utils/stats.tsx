@@ -13,13 +13,13 @@ export function DashboardStats({ run, scenario }: { run: RunResult; scenario: Sc
 
   return <>
     {stats.map(({ label, value, detail, icon: Icon }) => (
-      <div key={label} className="flex min-h-40 flex-col rounded-xl border border-border/70 bg-card p-5 shadow-sm">
+      <div key={label} className="flex min-h-40 flex-col rounded-xl border border-border bg-surface p-5 shadow-dashboard">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs leading-5 text-white/50">{label}</p>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-200/[0.08] text-emerald-200/75"><Icon size={17} strokeWidth={1.6} /></span>
+          <p className="text-xs leading-5 text-text-muted">{label}</p>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-alt text-accent"><Icon size={17} strokeWidth={1.6} /></span>
         </div>
-        <p className="mt-auto pt-5 text-[27px] font-semibold tracking-[-0.045em] text-white">{value}</p>
-        <p className="mt-1 text-[11px] leading-4 text-white/35">{detail}</p>
+        <p className="mt-auto pt-5 text-[27px] font-semibold tracking-[-0.045em] text-text">{value}</p>
+        <p className="mt-1 text-[11px] leading-4 text-text-muted">{detail}</p>
       </div>
     ))}
   </>
