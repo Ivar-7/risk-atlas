@@ -95,25 +95,6 @@
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; }
 
-/* Scroll reveal for the landing sections. The hidden start state lives inside a
-   no-preference query so prefers-reduced-motion users get fully visible
-   content with no transition at all. */
-@media (prefers-reduced-motion: no-preference) {
-  .reveal[data-reveal="hidden"] {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  .reveal[data-reveal] {
-    transition:
-      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .reveal[data-reveal="shown"] {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 a:focus-visible,
 button:focus-visible,
 summary:focus-visible {
@@ -126,4 +107,16 @@ button { cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+}
+
+@media print {
+  #landing-header *,
+  #hero-content *,
+  #landing-sections *,
+  #landing-footer * {
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 }

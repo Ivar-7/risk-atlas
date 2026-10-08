@@ -1,33 +1,29 @@
-import { TopNav } from '../components/landing/TopNav'
-import { HowItWorksSection, ProblemSection } from '../components/landing/ProblemAndPipeline'
-import { OutputsSection } from '../components/landing/OutputsSection'
-import { AiLayerSection } from '../components/landing/AiLayerSection'
-import { ValidationSection } from '../components/landing/ValidationSection'
-import { DataSection, MethodologySection } from '../components/landing/DataAndMethodology'
-import { CtaBand, LandingFooter, TeamSection } from '../components/landing/TeamCtaFooter'
+import { createPortal } from 'react-dom'
+import { MotionConfig } from 'motion/react'
+import { Header } from '../components/landing/Header'
+import { Hero } from '../components/landing/Hero'
+import { HowItWorks } from '../components/landing/HowItWorks'
+import { Outputs } from '../components/landing/Outputs'
+import { DataAndLimits } from '../components/landing/DataAndLimits'
+import { Footer } from '../components/landing/Footer'
+import { ScrollProgress } from '../components/ui/ScrollProgress'
 
-/**
- * Everything below the static hero in client/index.html.
- *
- * The hero stays untouched: index.html renders it as-is and this tree is
- * mounted into the #landing-sections element underneath it.
- */
 export default function Landing() {
+  const headerHost = document.getElementById('landing-header')
+  const heroHost = document.getElementById('hero-content')
+  const footerHost = document.getElementById('landing-footer')
+
   return (
-    <div id="top" className="bg-[#000000] text-white [font-family:'Plus_Jakarta_Sans',system-ui,sans-serif] antialiased">
-      <TopNav />
-      <main>
-        <ProblemSection />
-        <HowItWorksSection />
-        <OutputsSection />
-        <AiLayerSection />
-        <ValidationSection />
-        <DataSection />
-        <MethodologySection />
-        <TeamSection />
-        <CtaBand />
-      </main>
-      <LandingFooter />
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="bg-white text-[#10294F] [font-family:'Plus_Jakarta_Sans',system-ui,sans-serif] font-normal antialiased">
+        {headerHost ? createPortal(<Header />, headerHost) : null}
+        {heroHost ? createPortal(<Hero />, heroHost) : null}
+        <ScrollProgress />
+        <HowItWorks />
+        <Outputs />
+        <DataAndLimits />
+        {footerHost ? createPortal(<Footer />, footerHost) : null}
+      </div>
+    </MotionConfig>
   )
 }

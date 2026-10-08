@@ -3,22 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
-  <meta name="description" content="Risk Atlas makes Nairobi flood susceptibility, synthetic exposure, and illustrative loss easier to explore.">
+  <meta name="theme-color" content="#10294F">
+  <meta name="description" content="Risk Atlas: flood risk intelligence for Nairobi. Explore proxy hazard, synthetic exposure and illustrative flood loss.">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="/assets/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <title>Risk Atlas — Nairobi Flood Risk</title>
+  <title>Risk Atlas: flood risk intelligence for Nairobi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;800&display=block" rel="stylesheet">
   <style>
     :root {
       --u: min(calc(100vw / 1280), calc(100dvh / 760));
-      --ink: #fff; --ink-muted: #ededed; --panel: #181818; --white-btn: #fdfdfd;
+      --ink: #fff; --white-btn: #fdfdfd;
       --btn-ink: #050505; --glass-fill: rgba(0,0,0,.78); --glass-line: rgba(255,255,255,.09);
       --dx: 8.5; --dy: 13.1;
-      --e-reveal: cubic-bezier(.16,1,.3,1); --e-soft: cubic-bezier(.25,.8,.3,1);
     }
     @supports not (height: 100dvh) { :root { --u: min(calc(100vw / 1280), calc(100vh / 760)); } }
     * { box-sizing: border-box; }
@@ -31,7 +30,7 @@
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
       text-rendering: geometricPrecision; color: var(--ink);
     }
-    .hero { position: relative; width: 100vw; height: 100dvh; overflow: hidden; background: #000; }
+    .hero { position: relative; width: 100%; height: 100dvh; overflow: hidden; background: #000; }
     @supports not (height: 100dvh) { .hero { height: 100vh; } }
     .bg {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
@@ -43,65 +42,16 @@
       display: block; background: #000; pointer-events: none; opacity: 0; transition: opacity .9s linear;
     }
     .bg-video.is-active { opacity: 1; }
-    .nav {
-      position: absolute; top: 0; left: 0; right: 0; height: calc(67 * var(--u));
-      display: flex; align-items: center; padding-left: calc(24.5 * var(--u));
-      padding-right: calc(50.7 * var(--u)); z-index: 3;
-    }
-    .logo {
-      display: inline-flex; align-items: center; gap: calc(8 * var(--u));
-      font-weight: 700; font-size: calc(19 * var(--u)); letter-spacing: calc(-.7 * var(--u));
-      transform: translateY(calc(-2.4 * var(--u))); line-height: 1; color: var(--ink);
-      text-decoration: none; white-space: nowrap;
-    }
-    .logo-mark { display: block; width: auto; height: calc(34 * var(--u)); flex: 0 0 auto; }
-    .nav-links {
-      position: absolute; left: 50%; top: 50%;
-      transform: translate(-50%,-50%) translateX(calc(-23 * var(--u)));
-      display: flex; align-items: center; gap: calc(24.3 * var(--u)); white-space: nowrap;
-    }
-    .nav-links a {
-      color: var(--ink-muted); text-decoration: none; font-size: calc(11.5 * var(--u));
-      font-weight: 500; letter-spacing: calc(-.15 * var(--u)); line-height: 1; transition: color .18s ease;
-    }
-    .nav-links a:hover { color: #fff; }
-    .nav-actions { margin-left: auto; display: flex; align-items: center; gap: calc(6.8 * var(--u)); }
     .btn {
       display: inline-flex; align-items: center; justify-content: center; font-family: inherit;
       text-decoration: none; white-space: nowrap; border: 0; cursor: pointer;
     }
-    .btn-login {
-      height: calc(28 * var(--u)); padding: 0 calc(12.9 * var(--u)); border-radius: calc(14 * var(--u));
-      background: var(--panel); color: #e8e8e8; font-size: calc(11.5 * var(--u)); font-weight: 500;
-      letter-spacing: calc(-.15 * var(--u)); transition: background .18s ease, color .18s ease;
-    }
-    .btn-login:hover { background: #232323; color: #fff; }
-    .btn-nav-start {
-      height: calc(28 * var(--u)); padding-left: calc(13.5 * var(--u)); padding-right: calc(14.5 * var(--u));
-      border-radius: calc(14 * var(--u)); background: var(--white-btn); color: var(--btn-ink);
-      font-size: calc(11.1 * var(--u)); font-weight: 500; gap: calc(7 * var(--u)); transition: background .18s ease;
-    }
-    .btn-nav-start:hover, .btn-primary:hover { background: #fff; }
+    .btn-primary:hover { background: #fff; }
     .arw { flex: 0 0 auto; display: block; width: calc(11.5 * var(--u)); height: calc(9.6 * var(--u)); }
-    .burger {
-      display: none; margin-left: auto; width: calc(40 * var(--u)); height: calc(28 * var(--u));
-      align-items: center; justify-content: center; background: var(--panel); border-radius: calc(14 * var(--u));
-      border: 0; cursor: pointer; padding: 0;
-    }
-    .burger span, .burger span::before, .burger span::after {
-      display: block; width: 16px; height: 1.5px; background: #ededed; border-radius: 2px;
-    }
-    .burger span { position: relative; }
-    .burger span::before, .burger span::after { content: ''; position: absolute; left: 0; }
-    .burger span::before { top: -5px; } .burger span::after { top: 5px; }
     .hero-inner {
       position: absolute; left: 50%; top: 50%;
       transform: translate(-50%,-50%) translate(calc(var(--dx) * var(--u)), calc(var(--dy) * var(--u)));
       width: max-content; text-align: center; z-index: 2;
-    }
-    .eyebrow {
-      margin: 0 0 calc(13 * var(--u)); color: #b8f5da; font-size: calc(10.5 * var(--u));
-      font-weight: 600; letter-spacing: calc(2 * var(--u)); text-transform: uppercase;
     }
     h1 {
       margin: 0; font-weight: 500; font-size: calc(89 * var(--u));
@@ -132,13 +82,8 @@
     .btn-ghost:hover { background: rgba(0,0,0,.66); border-color: rgba(255,255,255,.16); }
     .btn-lg .arw { width: calc(13 * var(--u)); height: calc(10.8 * var(--u)); }
     a:focus-visible, button:focus-visible { outline: 2px solid #a78bfa; outline-offset: 3px; border-radius: 99px; }
-    .menu { display: none; }
-    @keyframes menuIn { from { opacity: 0; transform: translateY(-6px) scale(.985); } to { opacity: 1; transform: none; } }
     @media (max-width: 1160px) {
       :root { --u: min(max(.9px, min(calc(100vw / 1280), calc(100dvh / 760))), calc((100vw - 72px) / 575), calc(100dvh / 620)); }
-      .nav { height: max(58px, calc(67 * var(--u))); padding-left: max(24px, calc(28 * var(--u))); padding-right: max(24px, calc(28 * var(--u))); }
-      .nav-links, .nav-actions { display: none; }
-      .burger { display: flex; width: max(46px, calc(48 * var(--u))); height: max(38px, calc(34 * var(--u))); border-radius: 999px; }
       .hero-inner { max-width: calc(100vw - 48px); }
       .sub { font-size: max(16px, calc(17.4 * var(--u))); line-height: max(25px, calc(27 * var(--u))); }
       .ctas { margin-top: max(26px, calc(21.8 * var(--u))); gap: max(10px, calc(7 * var(--u))); }
@@ -146,37 +91,10 @@
       .btn-primary { padding-left: max(21px, calc(18.2 * var(--u))); padding-right: max(22px, calc(19.2 * var(--u))); }
       .btn-ghost { padding-left: max(20px, calc(17.4 * var(--u))); padding-right: max(21px, calc(18.4 * var(--u))); }
       .btn-lg .arw { width: max(14px, calc(13 * var(--u))); height: max(11.6px, calc(10.8 * var(--u))); }
-      .menu {
-        position: absolute; top: calc(max(58px, calc(67 * var(--u))) - 6px);
-        right: max(24px, calc(28 * var(--u))); width: min(320px, calc(100vw - 48px));
-        background: rgba(10,10,12,.86); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
-        border: 1px solid rgba(255,255,255,.09); border-radius: 20px; padding: 10px 8px 12px;
-        flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.55); transform-origin: top right; z-index: 5;
-      }
-      .menu.open { display: flex; animation: menuIn .18s ease both; }
-      .menu a {
-        color: var(--ink-muted); text-decoration: none; font-size: 15px; font-weight: 500;
-        letter-spacing: calc(-.15 * var(--u)); padding: 12px 14px; border-radius: 12px;
-        transition: background .18s ease, color .18s ease;
-      }
-      .menu a:hover { background: rgba(255,255,255,.06); color: #fff; }
-      .menu .divider { height: 1px; background: rgba(255,255,255,.08); margin: 8px 14px; }
-      .menu .m-start {
-        display: flex; align-items: center; justify-content: center; gap: 9px;
-        background: var(--white-btn); color: var(--btn-ink); margin: 6px 8px 0;
-        padding: 13px 16px; border-radius: 14px; font-weight: 600;
-      }
-      .menu .m-start:hover { background: #fff; color: var(--btn-ink); }
-      .menu .m-start .arw { width: 13px; height: 11px; }
     }
     @media (max-width: 552px) {
       :root { --u: 1px; }
-      .nav { height: 56px; padding: 0 20px; }
-      .logo { font-size: 19px; letter-spacing: -.6px; gap: 8px; }
-      .logo-mark { width: auto; height: 31px; }
-      .burger { width: 42px; height: 36px; }
       .hero-inner { position: absolute; left: 0; right: 0; top: 50%; width: auto; max-width: none; padding: 0 20px; transform: translateY(-47%); }
-      .eyebrow { margin-bottom: 13px; font-size: 10px; letter-spacing: 1.6px; }
       h1 { font-size: min(74px, calc((100vw - 44px) / 7.7)); line-height: 1.04; letter-spacing: -.02em; }
       .sub { margin-top: 16px; font-size: clamp(15.5px, 4vw, 16.5px); line-height: 1.6; letter-spacing: 0; max-width: 42ch; margin-left: auto; margin-right: auto; }
       .sub br { display: none; }
@@ -185,9 +103,6 @@
       .btn-primary { padding-left: 20px; padding-right: 21px; }
       .btn-ghost { padding-left: 19px; padding-right: 20px; }
       .btn-lg .arw { width: 13px; height: 11px; }
-      .menu { top: 50px; left: 16px; right: 16px; width: auto; }
-      .menu a { font-size: 15.5px; padding: 13px 14px; }
-      .menu .m-start { padding: 14px 16px; }
     }
     @media (max-width: 353px) { .ctas { flex-direction: column; align-items: center; } .btn-lg { width: min(100%, 272px); } }
     @media (max-width: 552px) and (max-height: 460px) {
@@ -196,142 +111,27 @@
       .ctas { margin-top: 18px; }
       .hero-inner { transform: translateY(-44%); }
     }
-    html.anim .ln { overflow: hidden; padding-top: .26em; margin-top: -.26em; }
-    html.anim .ln-i { transform: translateY(100%); }
-    html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
-    html.anim .burger, html.anim .eyebrow, html.anim .sub, html.anim .ctas .btn { opacity: 0; }
-    html.anim .ln-i, html.anim .logo, html.anim .nav-links a,
-    html.anim .nav-actions .btn, html.anim .eyebrow, html.anim .sub, html.anim .ctas .btn { will-change: transform, opacity; }
-    @keyframes lineRise { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    @keyframes subIn { from { opacity: 0; transform: translateY(calc(14 * var(--u))); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
-    @keyframes subInFlat { from { opacity: 0; transform: translateY(calc(12 * var(--u))); } to { opacity: 1; transform: none; } }
-    @keyframes pillIn { from { opacity: 0; transform: translateY(calc(8 * var(--u))) scale(.972); } to { opacity: 1; transform: none; } }
-    @keyframes liftIn { from { opacity: 0; transform: translateY(calc(9 * var(--u))); } to { opacity: 1; transform: none; } }
-    @keyframes logoIn { from { opacity: 0; transform: translateY(calc(-2.4 * var(--u))) translateY(calc(9 * var(--u))); } to { opacity: 1; transform: translateY(calc(-2.4 * var(--u))); } }
-    html.anim.go .ln-i { animation: lineRise 1.05s var(--e-reveal) both; }
-    html.anim.go .ln:nth-child(1) .ln-i { animation-delay: .12s; }
-    html.anim.go .ln:nth-child(2) .ln-i { animation-delay: .22s; }
-    html.anim.go .logo { animation: logoIn .62s var(--e-soft) .46s both; }
-    html.anim.go .nav-links a { animation: liftIn .55s var(--e-soft) both; }
-    html.anim.go .nav-links a:nth-child(1) { animation-delay: .540s; }
-    html.anim.go .nav-links a:nth-child(2) { animation-delay: .585s; }
-    html.anim.go .nav-links a:nth-child(3) { animation-delay: .630s; }
-    html.anim.go .nav-links a:nth-child(4) { animation-delay: .675s; }
-    html.anim.go .nav-links a:nth-child(5) { animation-delay: .720s; }
-    html.anim.go .eyebrow { animation: liftIn .62s var(--e-soft) .46s both; }
-    html.anim.go .sub { animation: subIn .85s var(--e-reveal) .58s both; }
-    html.anim.go .btn-login, html.anim.go .burger { animation: pillIn .55s var(--e-soft) .68s both; }
-    html.anim.go .btn-nav-start { animation: pillIn .55s var(--e-soft) .73s both; }
-    html.anim.go .ctas .btn-primary { animation: pillIn .70s var(--e-reveal) .90s both; }
-    html.anim.go .ctas .btn-ghost { animation: pillIn .70s var(--e-reveal) .97s both; }
-    @media (max-width: 552px) {
-      html.anim.go .sub { animation-name: subInFlat; }
-      html.anim.go .ln-i { animation-duration: .92s; }
-      html.anim.go .ctas .btn-primary { animation-delay: .84s; }
-      html.anim.go .ctas .btn-ghost { animation-delay: .90s; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      html.anim .ln { overflow: visible; padding-top: 0; margin-top: 0; }
-      html.anim .ln-i { transform: none; }
-      html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
-      html.anim .burger, html.anim .eyebrow, html.anim .sub, html.anim .ctas .btn { opacity: 1; }
-      * { transition: none !important; animation: none !important; }
-    }
   </style>
   <script>
-    (() => {
-      if (['/dashboard', '/login', '/app'].includes(location.pathname)) {
-        location.replace(location.pathname + '/');
-        return;
-      }
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      document.documentElement.classList.add('anim');
-      let started = false, cleaned = false, bootTimer, safetyTimer;
-      function clean() {
-        if (cleaned) return;
-        cleaned = true;
-        clearTimeout(safetyTimer);
-        document.removeEventListener('animationend', onEnd, true);
-        document.documentElement.classList.remove('anim', 'go');
-      }
-      function onEnd(event) {
-        if (event.animationName === 'pillIn' && event.target.classList.contains('btn-ghost')) clean();
-      }
-      function start() {
-        if (started) return;
-        started = true; clearTimeout(bootTimer);
-        document.addEventListener('animationend', onEnd, true);
-        safetyTimer = setTimeout(clean, 2600);
-        document.documentElement.classList.add('go');
-      }
-      function boot() {
-        bootTimer = setTimeout(start, 900);
-        if (document.fonts && document.fonts.ready) document.fonts.ready.then(start, start);
-        else start();
-      }
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-      else boot();
-    })();
+    if (['/dashboard', '/login', '/app'].includes(location.pathname)) {
+      location.replace(location.pathname + '/');
+    }
   </script>
 </head>
 <body>
-  <main class="hero">
+  <div id="landing-header" class="sticky top-0 z-50 -mb-px h-px"></div>
+  <main>
+  <section class="hero" aria-label="Risk Atlas flood model">
     <div class="bg" role="img" aria-label="Stylised globe of Earth rendered as a purple dot matrix against a starfield, slowly rotating">
       <video class="bg-video is-active" id="bgVideoA" autoplay muted loop playsinline preload="auto" disablepictureinpicture aria-hidden="true" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp"><source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4"></video>
       <video class="bg-video" id="bgVideoB" muted loop playsinline preload="auto" disablepictureinpicture aria-hidden="true" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp"><source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4" type="video/mp4"></video>
     </div>
-    <header class="nav">
-      <a class="logo" href="/" aria-label="Risk Atlas home">
-        <img class="logo-mark" src="/assets/logo-horizontal-dark.svg" alt="Risk Atlas">
-      </a>
-      <nav class="nav-links" aria-label="Primary">
-        <a href="/app/">The model</a><a href="/dashboard/#loss-curve">Loss curve</a><a href="/dashboard/#hazard-proxy">Hazard proxy</a>
-        <a href="/dashboard/#exposure-map">Exposure map</a><a href="/dashboard/#assumptions">Assumptions</a>
-      </nav>
-      <div class="nav-actions">
-        <a class="btn btn-login" href="/login/">Sign in</a>
-        <a class="btn btn-nav-start" href="/dashboard/">Open dashboard <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      </div>
-      <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><span></span></button>
-    </header>
-    <nav class="menu" id="menu" aria-label="Mobile">
-      <a href="/app/">The model</a><a href="/dashboard/#loss-curve">Loss curve</a><a href="/dashboard/#hazard-proxy">Hazard proxy</a>
-      <a href="/dashboard/#exposure-map">Exposure map</a><a href="/dashboard/#assumptions">Assumptions</a>
-      <div class="divider"></div><a href="/login/">Sign in</a>
-      <a class="m-start" href="/dashboard/">Open dashboard <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-    </nav>
-    <div class="hero-inner">
-      <p class="eyebrow">Nairobi flood model · Kenya Re challenge</p>
-      <h1><span class="ln"><span class="ln-i">Map the flood.</span></span><span class="ln"><span class="ln-i">Measure the risk.</span></span></h1>
-      <p class="sub">Explore flood susceptibility across Nairobi,<br>see how it intersects synthetic property exposure,<br>and trace assumed damage into illustrative loss.</p>
-      <div class="ctas">
-        <a class="btn btn-lg btn-primary" href="/dashboard/">Open dashboard <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-        <a class="btn btn-lg btn-ghost" href="/dashboard/#loss-curve">Explore scenarios <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      </div>
-    </div>
-  </main>
+    <div class="hero-inner" id="hero-content"></div>
+  </section>
   <div id="landing-sections"></div>
+  </main>
+  <div id="landing-footer"></div>
   <script type="module" src="/src/landing-main.tsx"></script>
-  <script>
-    (() => {
-      const burger = document.getElementById('burger');
-      const menu = document.getElementById('menu');
-      if (!burger || !menu) return;
-      const set = (open) => {
-        menu.classList.toggle('open', open);
-        burger.setAttribute('aria-expanded', String(open));
-        burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-      };
-      burger.addEventListener('click', (event) => { event.stopPropagation(); set(!menu.classList.contains('open')); });
-      menu.addEventListener('click', (event) => { if (event.target.closest('a')) set(false); });
-      document.addEventListener('click', (event) => {
-        if (menu.classList.contains('open') && !menu.contains(event.target) && !burger.contains(event.target)) set(false);
-      });
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && menu.classList.contains('open')) { set(false); burger.focus(); }
-      });
-    })();
-  </script>
   <script>
     (() => {
       const a = document.getElementById('bgVideoA');
