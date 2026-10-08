@@ -9,6 +9,9 @@ export function validateDashboardRun(run: RunResult): void {
   if (!Number.isFinite(run.metrics?.synthetic_locations) || !Number.isFinite(run.metrics?.locations)) {
     throw new Error('The model API is missing portfolio provenance counts')
   }
+  if (!Number.isFinite(run.hazard_validation?.detected_common) || !Array.isArray(run.sensitivity?.depth_scale) || !Array.isArray(run.sensitivity?.return_periods)) {
+    throw new Error('The model API is missing hotspot validation or assumption sensitivity; restart the updated backend')
+  }
   for (const scenario of run.scenarios) {
     if (!Number.isFinite(scenario.loss_kes) || !Number.isFinite(scenario.affected_tiv_kes) || !Number.isFinite(scenario.affected_locations)) {
       throw new Error('The model API is missing dashboard scenario values')

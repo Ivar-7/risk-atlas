@@ -39,7 +39,7 @@ def append_run(result: dict[str, Any]) -> dict[str, Any]:
         "controls": result["controls"],
         "input_hashes": result["input_hashes"],
         "metrics": result["metrics"],
-        "ai_delta_1_in_100_kes": result["metrics"]["ai_delta_1_in_100_kes"],
+        "drainage_delta_1_in_100_kes": result["metrics"]["drainage_delta_1_in_100_kes"],
         "prev_hash": _tail_hash(LEDGER_PATH),
     }
     record["entry_hash"] = _sha(record["prev_hash"] + _canonical(record))

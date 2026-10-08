@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Any
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,10 +12,12 @@ from app.audit.ledger import append_run, read_ledger, verify_chain
 from app.engine.config_load import load_assumptions, load_parameters
 from app.engine.ingestion import IngestedData, load_portfolio
 from app.engine.pipeline import run_model
+from app.engine.exposure_preview import ai_available, preview_exposure
 from app.engine.vulnerability import vulnerability_matrix
-from app.schemas import RunRequest
+from app.schemas import PreviewRequest, RunRequest
 
 STORE: dict[str, dict[str, Any]] = {}
+PREVIEWS: dict[str, dict[str, Any]] = {}
 PORTFOLIO: IngestedData | None = None
 LATEST: str | None = None
 
@@ -60,10 +64,46 @@ def defaults():
     }
 
 
+@app.get("/api/capabilities")
+def capabilities():
+    return {"ai_exposure_available": ai_available()}
+
+
+@app.post("/api/exposure/preview")
+def preview(body: PreviewRequest):
+    try:
+        result = preview_exposure(body.free_text, PORTFOLIO.hotspots)
+        now = datetime.now(timezone.utc)
+        for key, stored in list(PREVIEWS.items()):
+            if now - stored["created_at"] > timedelta(hours=1):
+                del PREVIEWS[key]
+        preview_id = str(uuid4())
+        PREVIEWS[preview_id] = {"text": body.free_text, "result": result, "created_at": now}
+        return {**result, "preview_id": preview_id}
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
 @app.post("/api/runs")
 def create_run(body: RunRequest):
     global LATEST
-    result = run_model(body.model_dump(), ingested=PORTFOLIO)
+    try:
+        payload = body.model_dump()
+        if body.free_text.strip():
+            reviewed = PREVIEWS.get(body.preview_id or "")
+            if not reviewed or reviewed["text"] != body.free_text or datetime.now(timezone.utc) - reviewed["created_at"] > timedelta(hours=1):
+                raise ValueError("Review this exact exposure text before running the model")
+            review_result = reviewed["result"]
+            if not review_result["groups"] or any(note.startswith("Skipped") for note in review_result["notes"]):
+                raise ValueError("Exposure preview has missing or invalid groups")
+            payload["exposure_groups"] = review_result["groups"]
+            payload["exposure_source"] = review_result["source"]
+        else:
+            payload["exposure_groups"] = []
+            payload["exposure_source"] = "none"
+        result = run_model(payload, ingested=PORTFOLIO)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     STORE[result["run_id"]] = result
     record = append_run(result)
     LATEST = result["run_id"]

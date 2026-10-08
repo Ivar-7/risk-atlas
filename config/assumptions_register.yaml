@@ -6,7 +6,7 @@ assumptions:
   - id: DATA-002
     provenance: REAL
     title: Named flood hotspots
-    statement: "24 of Nairobi County's 37 mapped flood-prone neighbourhoods, geocoded. Used to validate the proxy and to site the drainage AI."
+    statement: "24 of Nairobi County's 37 mapped flood-prone neighbourhoods, geocoded. Used to validate the proxy and to site the deterministic drainage-gap rule."
   - id: DATA-003
     provenance: PROXY
     title: Hazard scores
@@ -18,7 +18,7 @@ assumptions:
   - id: HAZ-002
     provenance: ASSUMPTION
     title: Return periods on the five tiers
-    statement: "extreme=5y, severe=10y, moderate=25y, occasional=100y, common=250y. The starter-kit proxy masks do not carry years. Wider masks have larger losses and are assigned rarer events to make a monotone illustrative EP curve; this is not calibrated frequency evidence."
+    statement: "extreme=10y, severe=25y, moderate=50y, occasional=100y, common=250y, matching the dataset metadata reference mapping. The masks do not carry years. Wider masks are assigned rarer events to make an illustrative EP curve; this is not calibrated frequency evidence."
   - id: VUL-001
     provenance: SOURCED
     title: JRC Africa residential anchors
@@ -31,11 +31,11 @@ assumptions:
     provenance: METHOD
     title: Ground-up loss
     statement: "Loss = damage_ratio × tiv_kes. Treaty layers and net-of-reinsurance are out of scope per the brief."
-  - id: AI-001
-    provenance: AI
+  - id: HAZ-003
+    provenance: METHOD
     title: Drainage-gap hazard correction
-    statement: "A distance kernel around proxy-missed hotspots (named in the brief plus empirically unflagged sites) increases susceptibility. This changes EP losses. Toggle on/off to see the delta."
-  - id: AI-002
-    provenance: AI
-    title: Free-text exposure rows
-    statement: "Plain-English portfolio text is parsed into extra synthetic buildings and run through the same pipeline, changing total exposure and loss."
+    statement: "A deterministic distance kernel around proxy-missed named hotspots increases susceptibility. It changes EP losses but is not a trained AI model or a validated drainage network."
+  - id: AI-001
+    provenance: CONDITIONAL
+    title: Reviewed free-text exposure
+    statement: "When OpenAI extraction is configured and its structured output is reviewed, model-extracted synthetic buildings change total exposure and loss. Without that service, strict rules can preview explicit values but are not AI."

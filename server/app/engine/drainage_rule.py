@@ -5,22 +5,12 @@ import pandas as pd
 
 from app.engine.config_load import load_parameters, scenario_order
 from app.engine.geo import haversine_km
+from app.engine.hazard_validation import proxy_score
 
 
-def _unflagged_hotspots(exposure: pd.DataFrame, hotspots: pd.DataFrame, parameters: dict) -> list[str]:
-    cfg = parameters["ai_drainage"]
-    radius = float(cfg["search_radius_km"])
-    threshold = float(cfg["unflagged_max_hazard"])
-    hazard_cols = [f"hazard_score_{n}" for n in scenario_order(parameters)]
-    named = set(cfg["named_misses"])
-    found: list[str] = []
-    for _, row in hotspots.iterrows():
-        dist = haversine_km(exposure["lat"].to_numpy(), exposure["lon"].to_numpy(), row["lat"], row["lon"])
-        near = exposure.loc[dist <= radius]
-        mx = float(near[hazard_cols].to_numpy().max()) if len(near) else 0.0
-        if row["name"] in named or mx < threshold:
-            found.append(str(row["name"]))
-    return found
+def _unflagged_hotspots(hotspots: pd.DataFrame) -> list[str]:
+    return [str(row["name"]) for _, row in hotspots.iterrows()
+            if proxy_score(float(row["lat"]), float(row["lon"]), "common") <= 0]
 
 
 def apply_drainage_correction(
@@ -38,14 +28,14 @@ def apply_drainage_correction(
         "missed_hotspots": [],
         "buildings_uplifted": 0,
         "mean_uplift_common": 0.0,
-        "method": "Distance kernel around proxy-missed government hotspots (problem statement limitation).",
+        "method": "Deterministic distance kernel around named hotspots missed by the common proxy raster; hotspot coordinates are approximate.",
     }
     if not enabled:
         frame["drainage_uplift"] = 0.0
         return frame, meta
 
-    cfg = params["ai_drainage"]
-    missed_names = _unflagged_hotspots(frame, hotspots, params)
+    cfg = params["drainage_rule"]
+    missed_names = _unflagged_hotspots(hotspots)
     missed = hotspots[hotspots["name"].isin(missed_names)]
     sigma = float(cfg["kernel_sigma_km"])
     if missed.empty:
@@ -59,15 +49,18 @@ def apply_drainage_correction(
     hs_lon = missed["lon"].to_numpy()[None, :]
     dist = haversine_km(loc_lat, loc_lon, hs_lat, hs_lon)
     kernel = np.exp(-(dist**2) / (2 * sigma**2)).max(axis=1)
+    kernel = np.where(kernel > 0.05, kernel, 0.0)
     frame["drainage_uplift"] = kernel
     for name in names:
         col = f"hazard_score_{name}"
         scale = float(cfg["tier_scale"][name])
         frame[col] = np.clip(frame[col] + kernel * scale, 0.0, 1.0)
+    for previous, current in zip(names, names[1:]):
+        frame[f"hazard_score_{current}"] = np.maximum(frame[f"hazard_score_{current}"], frame[f"hazard_score_{previous}"])
     meta.update(
         {
             "missed_hotspots": missed_names,
-            "buildings_uplifted": int((kernel > 0.05).sum()),
+            "buildings_uplifted": int((kernel > 0).sum()),
             "mean_uplift_common": float((kernel * float(cfg["tier_scale"]["common"])).mean()),
         }
     )

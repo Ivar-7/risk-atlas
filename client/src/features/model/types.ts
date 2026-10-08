@@ -1,7 +1,12 @@
 export type Controls = {
   apply_drainage_correction: boolean;
   free_text: string;
+  preview_id?: string;
+  exposure_source?: string;
 };
+
+export type ExposureGroup = { count: number; housing_class: string; place: string; tiv_each_kes: number; total_tiv_kes: number };
+export type ExposurePreview = { preview_id: string; source: 'none' | 'rules' | 'openai'; model?: string; groups: ExposureGroup[]; notes: string[]; rows_added: number; total_tiv_kes: number };
 
 export type LocationRow = {
   loc_id: string;
@@ -61,15 +66,19 @@ export type RunResult = {
     differs_from_jrc: string;
     by_depth_m: Record<string, number>;
   }>;
-  ai: {
+  sensitivity: {
+    depth_scale: Array<{ depth_scale_m: number; loss_1_in_100_kes: number; aal_kes: number }>;
+    return_periods: Array<{ return_period_multiplier: number; aal_kes: number }>;
+  };
+  interventions: {
     drainage: {
       enabled: boolean;
       missed_hotspots: string[];
       buildings_uplifted: number;
       method: string;
     };
-    free_text: { parsed: boolean; rows_added: number; notes: string[]; place?: string };
-    loss_delta_severe_kes: number;
+    free_text: { parsed: boolean; rows_added: number; notes: string[]; place?: string; source?: string; groups?: ExposureGroup[] };
+    drainage_delta_1_in_100_kes: number;
     effect: string;
   };
   explainability: {
@@ -79,7 +88,8 @@ export type RunResult = {
   };
   top_locations: LocationRow[];
   locations: LocationRow[];
-  hotspots: Array<{ name: string; lat: number; lon: number }>;
+  hotspots: Array<{ name: string; lat: number; lon: number; proxy_scores: Record<string, number>; proxy_detected_common: boolean }>;
+  hazard_validation: { checked: number; detected_common: number; missed_common: number; county_named: number; coordinate_method: string };
   assumptions: Array<{
     id: string;
     provenance: string;

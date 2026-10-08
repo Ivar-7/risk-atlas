@@ -3,10 +3,11 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from app.engine.geo import attach_hotspots
-from app.paths import EXPOSURE_PATH, HOTSPOTS_PATH
+from app.paths import DATA_DIR, EXPOSURE_PATH, HOTSPOTS_PATH
 
 REQUIRED_EXPOSURE = {
     "loc_id",
@@ -56,8 +57,15 @@ def load_portfolio() -> IngestedData:
         exposure["source"] = EXPOSURE_PATH.name
     if exposure["loc_id"].duplicated().any():
         raise ValueError("Duplicate loc_id in exposure file")
-    if (exposure["tiv_kes"] <= 0).any():
-        raise ValueError("Non-positive TIV present")
+    for field in ("tiv_kes", "floor_area_m2", "cost_per_m2_kes"):
+        if not np.isfinite(exposure[field]).all() or (exposure[field] <= 0).any():
+            raise ValueError(f"Exposure {field} must contain positive finite numbers")
+    if EXPOSURE_PATH.resolve() == (DATA_DIR / "exposure_nairobi_with_hazard.csv").resolve():
+        expected_tiv = exposure["floor_area_m2"] * exposure["cost_per_m2_kes"]
+        invalid_value = (exposure["tiv_kes"] - expected_tiv).abs() > 2_500
+        if invalid_value.any():
+            example = exposure.loc[invalid_value, "loc_id"].iloc[0]
+            raise ValueError(f"Starter TIV does not match floor area × rebuilding cost (within KES 2,500 rounding) at {example}")
     hotspots = pd.read_csv(HOTSPOTS_PATH)
     exposure = attach_hotspots(exposure, hotspots)
     return IngestedData(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -7,11 +8,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from app.engine.ai_drainage import apply_drainage_correction
-from app.engine.ai_exposure import parse_free_text
+from app.engine.drainage_rule import apply_drainage_correction
+from app.engine.exposure_rules import exposure_from_groups, parse_free_text
 from app.engine.briefing import underwriter_briefing
 from app.engine.config_load import load_assumptions, load_parameters, scenario_order
 from app.engine.financial import location_aal, scenario_losses
+from app.engine.hazard_validation import hotspot_validation, proxy_score
 from app.engine.geo import haversine_km
 from app.engine.ingestion import IngestedData, load_portfolio
 from app.engine.shap_explainer import LocationExplainer
@@ -31,19 +33,13 @@ def _attach_hotspots(exposure: pd.DataFrame, hotspots: pd.DataFrame) -> pd.DataF
     return out
 
 
-def _fill_hazard_from_neighbours(base: pd.DataFrame, extra: pd.DataFrame, names: list[str]) -> pd.DataFrame:
+def _fill_hazard_from_rasters(extra: pd.DataFrame, names: list[str]) -> pd.DataFrame:
     if extra.empty:
         return extra
     filled = extra.copy()
-    b_lat = base["lat"].to_numpy()[:, None]
-    b_lon = base["lon"].to_numpy()[:, None]
-    e_lat = extra["lat"].to_numpy()[None, :]
-    e_lon = extra["lon"].to_numpy()[None, :]
-    dist = haversine_km(b_lat, b_lon, e_lat, e_lon)
-    nearest = dist.argmin(axis=0)
     for name in names:
         col = f"hazard_score_{name}"
-        filled[col] = base[col].to_numpy()[nearest]
+        filled[col] = [proxy_score(float(row["lat"]), float(row["lon"]), name) for _, row in extra.iterrows()]
     return filled
 
 
@@ -68,18 +64,26 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
     params = load_parameters()
     names = scenario_order(params)
     body = payload or {}
-    apply_ai = bool(body.get("apply_drainage_correction", True))
+    apply_drainage = bool(body.get("apply_drainage_correction", True))
     free_text = str(body.get("free_text") or "")
 
     data = ingested or load_portfolio()
-    extra, parse_meta = parse_free_text(free_text, data.hotspots)
-    extra = _fill_hazard_from_neighbours(data.exposure, extra, names)
+    reviewed_groups = body.get("exposure_groups")
+    if reviewed_groups is not None:
+        extra, parse_meta = exposure_from_groups(reviewed_groups, data.hotspots)
+        parse_meta["source"] = body.get("exposure_source", "reviewed")
+    else:
+        extra, parse_meta = parse_free_text(free_text, data.hotspots)
+        parse_meta["source"] = "rules" if len(extra) else "none"
+    extra = _fill_hazard_from_rasters(extra, names)
     exposure = pd.concat([data.exposure, extra], ignore_index=True)
     exposure = _attach_hotspots(exposure, data.hotspots)
 
     baseline_losses = scenario_losses(exposure, params)
-    corrected, drainage_meta = apply_drainage_correction(exposure, data.hotspots, apply_ai, params)
+    corrected, drainage_meta = apply_drainage_correction(exposure, data.hotspots, apply_drainage, params)
     losses = scenario_losses(corrected, params)
+    original_corrected, _ = apply_drainage_correction(_attach_hotspots(data.exposure, data.hotspots), data.hotspots, apply_drainage, params)
+    original_losses = scenario_losses(original_corrected, params)
     aal = location_aal(losses, params)
     tiv = corrected["tiv_kes"].to_numpy(dtype=float)
 
@@ -99,6 +103,8 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
                 "affected_tiv_kes": float(tiv[losses[name] > 0].sum()),
             }
         )
+    if any(later["loss_kes"] + 0.01 < earlier["loss_kes"] for earlier, later in zip(scenarios, scenarios[1:])):
+        raise ValueError("Scenario losses must increase with assumed return period")
 
     explainer = LocationExplainer(corrected, aal)
     explanations = {
@@ -136,19 +142,35 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
     loss_250 = next(s for s in scenarios if s["return_period_years"] == 250)
     class_rows = _class_rows(corrected.reset_index(drop=True), aal, losses, names)
     synthetic_count = int(corrected["synthetic"].sum())
+    location_frame = pd.DataFrame(locations)
+    location_frame["area"] = np.where(location_frame["distance_to_hotspot_km"] <= 1.5, location_frame["nearest_hotspot"], "Outside 1.5 km of named centres")
     hotspot_rows = (
-        pd.DataFrame(locations)
-        .groupby("nearest_hotspot", as_index=False)
+        location_frame
+        .groupby("area", as_index=False)
         .agg(locations=("loc_id", "count"), tiv_kes=("tiv_kes", "sum"), aal_kes=("aal_kes", "sum"))
         .sort_values("aal_kes", ascending=False)
         .to_dict(orient="records")
     )
+    validation = hotspot_validation(data.hotspots)
+    depth_sensitivity = []
+    for depth_m in (2.0, 4.0, 6.0):
+        alternate = deepcopy(params)
+        alternate["hazard"]["max_depth_m"] = depth_m
+        alternate_losses = scenario_losses(corrected, alternate)
+        depth_sensitivity.append({"depth_scale_m": depth_m, "loss_1_in_100_kes": float(alternate_losses["occasional"].sum()), "aal_kes": float(location_aal(alternate_losses, alternate).sum())})
+    frequency_sensitivity = []
+    for multiplier in (0.5, 1.0, 2.0):
+        alternate = deepcopy(params)
+        for spec in alternate["return_periods"].values():
+            spec["years"] *= multiplier
+            spec["annual_exceedance"] = 1.0 / spec["years"]
+        frequency_sensitivity.append({"return_period_multiplier": multiplier, "aal_kes": float(location_aal(losses, alternate).sum())})
 
     result = {
         "run_id": str(uuid.uuid4()),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "model": params["model"],
-        "controls": {"apply_drainage_correction": apply_ai, "free_text": free_text},
+        "controls": {"apply_drainage_correction": apply_drainage, "free_text": free_text, "exposure_source": parse_meta["source"]},
         "input_hashes": {"exposure": data.exposure_hash, "hotspots": data.hotspots_hash},
         "labels": {
             "exposure": f"{synthetic_count} of {len(corrected)} rows declared synthetic by the input CSV or free-text parser; provenance is not independently verified",
@@ -175,7 +197,8 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
             "loss_1_in_100_kes": loss_100["loss_kes"],
             "loss_1_in_250_kes": loss_250["loss_kes"],
             "baseline_1_in_100_kes": loss_100["baseline_loss_kes"],
-            "ai_delta_1_in_100_kes": loss_100["loss_kes"] - loss_100["baseline_loss_kes"],
+            "drainage_delta_1_in_100_kes": loss_100["loss_kes"] - loss_100["baseline_loss_kes"],
+            "exposure_delta_1_in_100_kes": loss_100["loss_kes"] - float(original_losses["occasional"].sum()),
         },
         "scenarios": scenarios,
         "ep_curve": [
@@ -192,13 +215,15 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
         "by_housing_class": class_rows,
         "by_hotspot": hotspot_rows,
         "vulnerability_matrix": vulnerability_matrix(params),
-        "ai": {
+        "sensitivity": {"depth_scale": depth_sensitivity, "return_periods": frequency_sensitivity},
+        "interventions": {
             "drainage": drainage_meta,
             "free_text": parse_meta,
-            "loss_delta_severe_kes": loss_100["loss_kes"] - loss_100["baseline_loss_kes"],
+            "drainage_delta_1_in_100_kes": loss_100["loss_kes"] - loss_100["baseline_loss_kes"],
             "effect": (
-                "Drainage correction changes location susceptibility then losses. "
-                "Free-text rows change TIV and the EP curve. SHAP explains location AAL after those steps."
+                "The deterministic drainage rule changes susceptibility and losses. "
+                + ("Model-extracted, reviewed exposure changes TIV and loss. " if parse_meta["source"] == "openai" and len(extra) else "No model-backed exposure was used in this run. ")
+                + "SHAP explains a surrogate after the loss calculation."
             ),
         },
         "explainability": {
@@ -209,7 +234,8 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
         "top_locations": sorted(locations, key=lambda r: r["aal_kes"], reverse=True)[:15],
         "locations": locations,
         "explanations": explanations,
-        "hotspots": data.hotspots.to_dict(orient="records"),
+        "hazard_validation": {key: value for key, value in validation.items() if key != "hotspots"},
+        "hotspots": validation["hotspots"],
         "assumptions": load_assumptions()["assumptions"],
     }
     result["briefing"] = underwriter_briefing(result)

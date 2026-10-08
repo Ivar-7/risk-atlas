@@ -1,41 +1,20 @@
 import { Download, Info } from 'lucide-react'
+import { money } from '../../../features/model/format'
 import type { RunResult } from '../../../features/model/types'
 import { downloadScenario, scenarioLabel, type Scenario } from './model'
 import { Panel, PanelHeading } from './panel'
 
-export function QuickActions({ run, scenario, onScenarioChange }: {
-  run: RunResult
-  scenario: Scenario
-  onScenarioChange: (tier: string) => void
-}) {
-  return (
-    <Panel id="assumptions" className="p-5 sm:p-6">
-      <PanelHeading eyebrow="Workspace" title="Explore a scenario" description="Switch the assumed return period to update every view." />
-      <div className="mt-6 grid grid-cols-3 gap-2">
-        {[...run.scenarios].sort((a, b) => a.return_period_years - b.return_period_years).map((item) => (
-          <button
-            key={item.tier}
-            type="button"
-            aria-pressed={scenario.tier === item.tier}
-            onClick={() => onScenarioChange(item.tier)}
-            className={`rounded-lg border px-2 py-2.5 text-xs font-medium transition-colors ${scenario.tier === item.tier ? 'border-emerald-200/40 bg-emerald-200/15 text-emerald-100' : 'border-white/10 bg-white/[0.035] text-white/55 hover:bg-white/[0.07] hover:text-white'}`}
-          >
-            {scenarioLabel(item)}
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={() => downloadScenario(run, scenario)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-200 px-4 py-3 text-sm font-semibold text-[#0b1713] transition-colors hover:bg-emerald-100">
-        <Download size={16} /> Export scenario CSV
-      </button>
-      <details className="group mt-5 rounded-lg border border-white/10 bg-white/[0.025] p-4 text-xs text-white/55">
-        <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-white/80"><Info size={15} className="text-emerald-200" /> Data and assumptions <span className="ml-auto text-white/40 group-open:rotate-45">+</span></summary>
-        <div className="mt-4 space-y-3 border-t border-white/10 pt-4 leading-5">
-          {Object.entries(run.labels).map(([key, value]) => <p key={key}><strong className="text-white/75">{key.replaceAll('_', ' ')}:</strong> {value}</p>)}
-          <p><strong className="text-white/75">Selected scenario:</strong> {scenario.meaning}. Its return period is an assumption.</p>
-          <p><strong className="text-white/75">Run:</strong> {run.run_id.slice(0, 8)} · {new Date(run.created_at).toLocaleString('en-KE')}</p>
-        </div>
-      </details>
-      <p className="mt-4 text-[11px] leading-5 text-white/35">{run.disclaimer}</p>
-    </Panel>
-  )
+export function QuickActions({ run, scenario }: { run: RunResult; scenario: Scenario }) {
+  return <Panel id="assumptions" className="p-5 sm:p-6">
+    <PanelHeading eyebrow="Model provenance" title="Data and assumptions" description="Source labels and modeling choices recorded with the current backend run." action={<button type="button" onClick={() => downloadScenario(run, scenario)} className="flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"><Download size={15} /> Export {scenarioLabel(scenario)} CSV</button>} />
+    <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div><h3 className="mb-3 text-sm font-semibold text-foreground">Run provenance</h3><div className="divide-y divide-border/70 rounded-lg border border-border/70">{Object.entries(run.labels).map(([key, value]) => <div key={key} className="px-4 py-3"><p className="text-xs font-medium capitalize text-foreground">{key.replaceAll('_', ' ')}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{value}</p></div>)}</div></div>
+      <div><h3 className="mb-3 text-sm font-semibold text-foreground">Assumptions register</h3><div className="divide-y divide-border/70 rounded-lg border border-border/70">{run.assumptions.map((item) => <div key={item.id} className="px-4 py-3"><p className="text-xs font-medium text-foreground">{item.title}</p><p className="mt-1 text-[11px] uppercase tracking-wide text-primary/75">{item.id} · {item.provenance}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{item.statement}</p></div>)}</div></div>
+    </div>
+    <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="rounded-lg border border-border/70 p-4"><h3 className="text-sm font-semibold">Score-to-depth sensitivity</h3><p className="mt-1 text-xs text-muted-foreground">Recalculates loss using alternative assumed depth scales. These are scenarios, not confidence bounds.</p><table className="mt-3 w-full text-left text-xs"><thead className="text-muted-foreground"><tr><th className="py-2">Score 1 equals</th><th className="text-right">1-in-100 loss</th><th className="text-right">AAL</th></tr></thead><tbody>{run.sensitivity.depth_scale.map((row) => <tr key={row.depth_scale_m} className="border-t border-border/60"><td className="py-2">{row.depth_scale_m} m {row.depth_scale_m === 4 ? '(current)' : ''}</td><td className="text-right">{money(row.loss_1_in_100_kes)}</td><td className="text-right">{money(row.aal_kes)}</td></tr>)}</tbody></table></div>
+      <div className="rounded-lg border border-border/70 p-4"><h3 className="text-sm font-semibold">Frequency sensitivity</h3><p className="mt-1 text-xs text-muted-foreground">All assumed return periods are multiplied by the factor shown. Event losses stay the same; AAL changes.</p><table className="mt-3 w-full text-left text-xs"><thead className="text-muted-foreground"><tr><th className="py-2">Return periods</th><th className="text-right">AAL</th></tr></thead><tbody>{run.sensitivity.return_periods.map((row) => <tr key={row.return_period_multiplier} className="border-t border-border/60"><td className="py-2">{row.return_period_multiplier}× {row.return_period_multiplier === 1 ? '(current)' : ''}</td><td className="text-right">{money(row.aal_kes)}</td></tr>)}</tbody></table></div>
+    </div>
+    <div className="mt-6 flex items-start gap-2 rounded-lg border border-amber-200/15 bg-amber-200/[0.04] p-4 text-xs leading-5 text-amber-50/75"><Info size={15} className="mt-0.5 shrink-0" /><p>{run.disclaimer} Selected {scenarioLabel(scenario)} scenario: {scenario.meaning}.</p></div>
+  </Panel>
 }

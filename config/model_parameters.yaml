@@ -7,7 +7,7 @@ model:
   team: Team A
 
 defaults:
-  apply_drainage_ai: true
+  apply_drainage_correction: true
   free_text: ""
   random_seed: 42
 
@@ -16,9 +16,9 @@ defaults:
 return_periods:
   common: { years: 250, annual_exceedance: 0.004, meaning: "Widest proxy mask, assumed rarest event" }
   occasional: { years: 100, annual_exceedance: 0.01, meaning: "1-in-100 reference loss" }
-  moderate: { years: 25, annual_exceedance: 0.04, meaning: "Severe rainy-season flood" }
-  severe: { years: 10, annual_exceedance: 0.10, meaning: "Wet-decade urban flood" }
-  extreme: { years: 5, annual_exceedance: 0.20, meaning: "Narrowest proxy mask, assumed most frequent event" }
+  moderate: { years: 50, annual_exceedance: 0.02, meaning: "Intermediate proxy mask, assumed 1-in-50 event" }
+  severe: { years: 25, annual_exceedance: 0.04, meaning: "Narrow proxy mask, assumed 1-in-25 event" }
+  extreme: { years: 10, annual_exceedance: 0.10, meaning: "Narrowest proxy mask, assumed most frequent event" }
 
 # ASSUMPTION — problem statement Step 1 example: treat score 1 as 4 m, depth = score × 4 m.
 # This is not measured flood depth.
@@ -52,20 +52,14 @@ vulnerability:
       cap: 0.70
       differs_from_jrc: "RCC treated as more resistant than JRC residential (no Kenya RCC claims curve exists)."
 
-# AI drainage correction — uses the brief's stated proxy limitation (misses Kibera, Westlands, Lavington
-# and other drainage-driven floods). This changes hazard scores and therefore losses.
-ai_drainage:
-  named_misses:
-    - Kibera
-    - Westlands
-    - Lavington
+# Deterministic drainage-gap rule — uses the brief's stated proxy limitation
+# (misses Kibera, Westlands, Lavington and other drainage-driven floods).
+drainage_rule:
   kernel_sigma_km: 1.2
-  unflagged_max_hazard: 0.15
-  search_radius_km: 1.5
-# ASSUMPTION: drainage failure is more relevant to frequent pluvial flooding than to the rarest tier.
+# ASSUMPTION: the uplift grows with the assumed event footprint so rarer events cannot have lower hazard.
   tier_scale:
-    common: 0.08
-    occasional: 0.12
+    common: 0.35
+    occasional: 0.28
     moderate: 0.20
-    severe: 0.28
-    extreme: 0.35
+    severe: 0.12
+    extreme: 0.08

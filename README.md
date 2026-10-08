@@ -21,11 +21,32 @@ npm run dev
 ```
 
 Open `http://localhost:5173/dashboard/` for the live API-backed overview or
-`http://localhost:5173/app/` for live model runs, AI controls, explanations,
+`http://localhost:5173/app/` for live model runs, exposure review, explanations,
 and the audit ledger. Vite proxies `/api` to port 8000. Production hosting
 must route `/api` to the FastAPI service on the same origin. The dashboard
 requires that service; it does not display bundled fallback results. Its map
 uses OpenStreetMap tiles and needs network access.
+
+The supplied Nairobi exposure CSVs have been reconciled with the dataset
+metadata: 600 synthetic locations total KES 6,363,470,000. On startup the API
+checks each starter-kit insured value against floor area × rebuilding cost, allowing the
+documented KES 5,000 rounding. It refuses inconsistent input rather than
+publishing a scaled loss estimate.
+
+Free-text exposure must be previewed before a run. Without an API key, the
+preview uses strict rules and is labelled as such. For model-backed structured
+extraction, set `OPENAI_API_KEY` in the backend environment and optionally
+`RISK_ATLAS_OPENAI_MODEL` (default `gpt-4o-mini`). The backend calls the
+OpenAI Responses API; the key stays server-side. The user reviews extracted
+count, class, named place, and value before those synthetic rows change the
+loss curve. The drainage-gap correction is a deterministic rule, not AI.
+
+The map's transparent proxy layers are generated from the supplied GeoTIFFs
+with `python3 scripts/build_proxy_overlays.py` (requires Pillow and numpy).
+Regenerate these images if the source rasters change. Hotspot detection is
+sampled from the rasters by the backend on each run; named-centre coordinates
+are approximate. To use a different API port with Vite, set
+`RISK_ATLAS_API_TARGET=http://127.0.0.1:8001` before `npm run dev`.
 
 The included exposure CSV is synthetic. To use your own geocoded portfolio,
 set `RISK_ATLAS_EXPOSURE_CSV=/absolute/path/to/exposure.csv` before starting

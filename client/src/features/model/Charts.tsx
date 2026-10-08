@@ -28,7 +28,7 @@ export function EpChart({ run }: { run: RunResult }) {
         <Tooltip formatter={(v) => money(Number(v))} contentStyle={{ background: "#172126", border: "1px solid rgba(255,255,255,.15)", borderRadius: 10 }} />
         <Legend />
         <Line type="monotone" dataKey="withAI" stroke="#a7f3d0" strokeWidth={2} name="Loss (current run)" />
-        <Line type="monotone" dataKey="proxyOnly" stroke="#67e8f9" strokeDasharray="4 4" strokeWidth={2} name="Proxy only (no drainage AI)" />
+        <Line type="monotone" dataKey="proxyOnly" stroke="#67e8f9" strokeDasharray="4 4" strokeWidth={2} name="Proxy only (no drainage rule)" />
       </LineChart>
     </ResponsiveContainer>
   );

@@ -1,4 +1,4 @@
-import type { Controls, Explanation, RunResult } from './types'
+import type { Controls, Explanation, ExposurePreview, RunResult } from './types'
 
 export const defaultControls: Controls = { apply_drainage_correction: true, free_text: '' }
 
@@ -12,6 +12,10 @@ async function json<T>(response: Response): Promise<T> {
 }
 
 export const fetchLatest = () => fetch('/api/runs/latest').then(json<RunResult>)
+export const fetchCapabilities = () => fetch('/api/capabilities').then(json<{ ai_exposure_available: boolean }>)
+export const previewExposure = (free_text: string) => fetch('/api/exposure/preview', {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ free_text }),
+}).then(json<ExposurePreview>)
 export const createRun = (controls: Controls) => fetch('/api/runs', {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(controls),
 }).then(json<RunResult>)

@@ -6,7 +6,7 @@ import { Panel, PanelHeading } from './panel'
 export function RefundReturnRateChart({ run, scenario }: { run: RunResult; scenario: Scenario }) {
   const maskData = [...run.scenarios].sort((a, b) => a.return_period_years - b.return_period_years)
   return (
-    <Panel id="hazard-proxy" className="p-5 sm:col-span-2 sm:p-6">
+    <Panel id="hazard-proxy" className="p-5 sm:p-6">
       <PanelHeading eyebrow="Hazard" title="Modelled loss reach" description="Locations with modelled loss at each source proxy tier in this run." />
       <div className="mt-7 h-[260px] w-full" role="img" aria-label="Counts of locations with modelled loss by source proxy tier">
         <ResponsiveContainer width="100%" height="100%">
@@ -26,6 +26,7 @@ export function RefundReturnRateChart({ run, scenario }: { run: RunResult; scena
           </BarChart>
         </ResponsiveContainer>
       </div>
+      <div className="mt-6 grid gap-3 sm:grid-cols-3"><div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">Common raster detects</p><p className="mt-2 text-xl font-semibold">{run.hazard_validation.detected_common} / {run.hazard_validation.checked}</p><p className="mt-1 text-xs text-muted-foreground">Approximate named hotspot centres</p></div><div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">Named areas without coordinates</p><p className="mt-2 text-xl font-semibold">{run.hazard_validation.county_named - run.hazard_validation.checked}</p><p className="mt-1 text-xs text-muted-foreground">Not included in this point check</p></div><div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">Selected tier</p><p className="mt-2 text-xl font-semibold capitalize">{scenario.tier}</p><p className="mt-1 text-xs text-muted-foreground">Assigned 1-in-{scenario.return_period_years}; frequency assumed</p></div></div>
       <p className="mt-3 text-[11px] leading-5 text-white/35">These scores describe relative susceptibility, not observed flood water depth.</p>
     </Panel>
   )
