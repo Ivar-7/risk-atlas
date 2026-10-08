@@ -7,6 +7,17 @@ import { scenarioHazard, scenarioLabel, scenarioLoss, type Scenario } from './mo
 import { Panel, PanelHeading } from './panel'
 import { chartTheme, housingClassColor } from '../../../lib/chartTheme'
 
+const mapHousingColors: Record<string, string> = {
+  informal_iron_sheet: '#739CC9',
+  semi_permanent: '#D59281',
+  permanent_masonry: '#81B7AF',
+  concrete_rcc: '#A2AEC0',
+}
+
+function mapHousingColor(housingClass: string) {
+  return mapHousingColors[housingClass] ?? housingClassColor(housingClass)
+}
+
 function locationPopup(location: LocationRow, scenario: Scenario): HTMLElement {
   const content = document.createElement('div')
   const title = document.createElement('strong')
@@ -14,10 +25,7 @@ function locationPopup(location: LocationRow, scenario: Scenario): HTMLElement {
   content.append(title)
   for (const detail of [
     clsLabel(location.housing_class),
-    `Ground-up loss: ${money(location.ground_up_scenario_losses_kes[scenario.tier])}`,
-    `Gross insured loss: ${money(scenarioLoss(location, scenario.tier))}`,
-    `Assumed deductible: ${money(location.deductible_kes)}`,
-    `Assumed policy limit: ${money(location.policy_limit_kes)}`,
+    `Modelled loss: ${money(scenarioLoss(location, scenario.tier))}`,
     `Insured value: ${money(location.tiv_kes)}`,
     `Proxy score: ${scenarioHazard(location, scenario.tier).toFixed(3)}`,
   ]) {
@@ -54,6 +62,7 @@ export function ExposureMap({ run, scenario }: {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19,
+      opacity: 0.72,
     }).addTo(instance)
     map.current = instance
     markers.current = L.layerGroup().addTo(instance)
@@ -77,11 +86,12 @@ export function ExposureMap({ run, scenario }: {
     overlay.current.bringToBack()
     const bounds: L.LatLngTuple[] = []
     const hotspotMarkers: L.CircleMarker[] = []
+    const maxTiv = Math.max(...run.locations.map((location) => location.tiv_kes).filter(Number.isFinite), 1)
     for (const hotspot of run.hotspots) {
       if (!Number.isFinite(hotspot.lat) || !Number.isFinite(hotspot.lon)) continue
       const detected = (hotspot.proxy_scores?.[scenario.tier] ?? 0) > 0
       hotspotMarkers.push(L.circleMarker([hotspot.lat, hotspot.lon], {
-        radius: 8, color: detected ? chartTheme.success : chartTheme.danger, weight: 2, fillColor: detected ? chartTheme.success : chartTheme.danger, fillOpacity: 0.8,
+        radius: 8, color: detected ? chartTheme.success : chartTheme.danger, weight: 1.5, fillColor: detected ? chartTheme.success : chartTheme.danger, fillOpacity: 0.2,
       }).bindTooltip(`${hotspot.name} · ${detected ? 'proxy detects centre' : 'proxy misses centre'}`).addTo(layer))
     }
     for (const location of run.locations) {
@@ -89,12 +99,15 @@ export function ExposureMap({ run, scenario }: {
       const loss = scenarioLoss(location, scenario.tier)
       const area = location.distance_to_hotspot_km <= 1.5 ? location.nearest_hotspot : 'Outside 1.5 km of named centres'
       if (selectedArea && area !== selectedArea) continue
+      const color = mapHousingColor(location.housing_class)
+      const tivRatio = Math.min(Math.max(location.tiv_kes, 0) / maxTiv, 1)
       const marker = L.circleMarker([location.lat, location.lon], {
-        radius: loss > 0 ? 5 : 3,
-        color: housingClassColor(location.housing_class),
-        fillColor: housingClassColor(location.housing_class),
-        fillOpacity: loss > 0 ? 0.8 : 0.25,
-        weight: 1,
+        radius: 2.5 + Math.sqrt(tivRatio) * 4.5,
+        color: '#FFFFFF',
+        fillColor: color,
+        fillOpacity: loss > 0 ? 0.85 : 0.58,
+        opacity: 0.95,
+        weight: 0.9,
       }).bindPopup(locationPopup(location, scenario)).addTo(layer)
       const label = document.createElement('span')
       label.textContent = location.loc_id
@@ -115,18 +128,18 @@ export function ExposureMap({ run, scenario }: {
       />
       <div ref={container} className="mt-5 h-105 w-full overflow-hidden rounded-xl border border-border bg-surface-alt sm:h-130" role="application" aria-label="Interactive Nairobi portfolio map" />
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-text-muted">
-        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-brand-navy" /> Informal iron-sheet</span>
-        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-accent" /> Semi-permanent</span>
-        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-steel-blue" /> Permanent masonry</span>
-        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-brand-grey" /> Concrete / RCC</span>
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full border border-white" style={{ backgroundColor: mapHousingColor('informal_iron_sheet') }} /> Informal iron-sheet</span>
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full border border-white" style={{ backgroundColor: mapHousingColor('semi_permanent') }} /> Semi-permanent</span>
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full border border-white" style={{ backgroundColor: mapHousingColor('permanent_masonry') }} /> Permanent masonry</span>
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full border border-white" style={{ backgroundColor: mapHousingColor('concrete_rcc') }} /> Concrete / RCC</span>
         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-success" /> Named centre detected</span>
         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-danger" /> Named centre missed</span>
         <span className="flex items-center gap-2"><span className="h-2 w-8 rounded-sm" style={{ backgroundImage: `linear-gradient(to right, ${chartTheme.sequential.join(', ')})` }} /> Proxy susceptibility</span>
-        <span>Marker opacity indicates gross insured payout</span>
+        <span>Circle size indicates insured value; opacity indicates modelled loss</span>
       </div>
       <div className="mt-6 grid gap-5 xl:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4"><h3 className="text-sm font-semibold">Hotspot check</h3><p className="mt-2 text-2xl font-semibold text-text">{run.hazard_validation.detected_common} / {run.hazard_validation.checked}</p><p className="mt-1 text-xs leading-5 text-text-muted">Named centres detected by the common proxy raster. The county named {run.hazard_validation.county_named} areas; coordinates are available for {run.hazard_validation.checked}. {run.hazard_validation.coordinate_method}</p><div className="mt-3 flex flex-wrap gap-1.5">{run.hotspots.filter((item) => !item.proxy_detected_common).map((item) => <span key={item.name} className="rounded-full bg-danger-tint px-2 py-1 text-[11px] text-danger">{item.name}</span>)}</div></div>
-        <div className="rounded-lg border border-border bg-surface p-4"><h3 className="text-sm font-semibold">Accumulation near named centres</h3><p className="mt-1 text-xs leading-5 text-text-muted">Sample locations within 1.5 km of an approximate hotspot centre. Loss is gross insured payout. Select a row to filter the map. Values outside those circles stay separate.</p><div className="mt-3 max-h-64 overflow-y-auto"><table className="w-full text-left text-xs"><thead><tr><th className="py-2">Area</th><th className="text-right">TIV</th><th className="text-right">{scenarioLabel(scenario)} gross</th></tr></thead><tbody>{rankedAreas.map((row) => <tr key={row.name} onClick={() => setSelectedArea((current) => current === row.name ? null : row.name)} className={`cursor-pointer ${selectedArea === row.name ? 'text-brand-navy' : 'text-text'}`}><td className="py-2">{row.name} <span className="text-text-muted">({row.locations})</span></td><td className="text-right tabular-nums">{money(row.tiv)}</td><td className="text-right tabular-nums">{money(row.loss)}</td></tr>)}</tbody></table></div>{selectedArea && <button type="button" onClick={() => setSelectedArea(null)} className="mt-2 text-xs text-accent underline">Show all locations</button>}</div>
+        <div className="rounded-lg border border-border bg-surface p-4"><h3 className="text-sm font-semibold">Accumulation near named centres</h3><p className="mt-1 text-xs leading-5 text-text-muted">Sample locations within 1.5 km of an approximate hotspot centre. Select a row to filter the map. Values outside those circles stay separate.</p><div className="mt-3 max-h-64 overflow-y-auto"><table className="w-full text-left text-xs"><thead><tr><th className="py-2">Area</th><th className="text-right">TIV</th><th className="text-right">{scenarioLabel(scenario)} loss</th></tr></thead><tbody>{rankedAreas.map((row) => <tr key={row.name} onClick={() => setSelectedArea((current) => current === row.name ? null : row.name)} className={`cursor-pointer ${selectedArea === row.name ? 'text-brand-navy' : 'text-text'}`}><td className="py-2">{row.name} <span className="text-text-muted">({row.locations})</span></td><td className="text-right tabular-nums">{money(row.tiv)}</td><td className="text-right tabular-nums">{money(row.loss)}</td></tr>)}</tbody></table></div>{selectedArea && <button type="button" onClick={() => setSelectedArea(null)} className="mt-2 text-xs text-accent underline">Show all locations</button>}</div>
       </div>
     </Panel>
   )
