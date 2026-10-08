@@ -14,7 +14,7 @@ export function RevenueChart({ run, scenario }: { run: RunResult; scenario: Scen
         description={`Estimated ground-up loss across ${run.scenarios.length} assumed return periods, with the uncorrected proxy as a comparison.`}
         action={<span className="rounded-full border border-accent/20 bg-danger-tint px-3 py-1.5 text-[11px] text-danger">{scenarioLabel(scenario)} selected</span>}
       />
-      <div className="mt-7 h-[260px] w-full" role="img" aria-label="Modelled gross loss by assumed return period for the current run">
+      <div className="mt-7 h-65 w-full" role="img" aria-label="Modelled gross loss by assumed return period for the current run">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={[...run.ep_curve].sort((a, b) => a.return_period_years - b.return_period_years)} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
             <defs>

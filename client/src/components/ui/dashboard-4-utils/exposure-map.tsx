@@ -110,7 +110,7 @@ export function ExposureMap({ run, scenario }: {
         description={`Sample locations and the ${scenario.tier} susceptibility proxy over OpenStreetMap. The blue raster is not measured flood water.`}
         action={<span className="rounded-full border border-accent/20 bg-danger-tint px-3 py-1.5 text-[11px] text-danger">{scenario.affected_locations} affected</span>}
       />
-      <div ref={container} className="mt-5 h-[420px] w-full overflow-hidden rounded-xl border border-border bg-surface-alt sm:h-[520px]" role="application" aria-label="Interactive Nairobi portfolio map" />
+      <div ref={container} className="mt-5 h-105 w-full overflow-hidden rounded-xl border border-border bg-surface-alt sm:h-130" role="application" aria-label="Interactive Nairobi portfolio map" />
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-text-muted">
         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-brand-navy" /> Informal iron-sheet</span>
         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-accent" /> Semi-permanent</span>

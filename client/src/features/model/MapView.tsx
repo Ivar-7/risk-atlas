@@ -65,5 +65,5 @@ export default function MapView({ run, selected, onSelect }: Props) {
     };
   }, [run, selected, onSelect]);
 
-  return <div className="h-[360px] w-full rounded-xl bg-surface-alt" ref={ref} />;
+  return <div className="h-90 w-full rounded-xl bg-surface-alt" ref={ref} />;
 }

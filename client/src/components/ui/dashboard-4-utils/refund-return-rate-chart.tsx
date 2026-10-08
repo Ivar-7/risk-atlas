@@ -9,7 +9,7 @@ export function RefundReturnRateChart({ run, scenario }: { run: RunResult; scena
   return (
     <Panel id="hazard-proxy" className="p-5 sm:p-6">
       <PanelHeading eyebrow="Hazard" title="Modelled loss reach" description="Locations with modelled loss at each source proxy tier in this run." />
-      <div className="mt-7 h-[260px] w-full" role="img" aria-label="Counts of locations with modelled loss by source proxy tier">
+      <div className="mt-7 h-65 w-full" role="img" aria-label="Counts of locations with modelled loss by source proxy tier">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={maskData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke={chartTheme.grid} strokeWidth={1} />
