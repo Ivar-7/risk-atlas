@@ -36,6 +36,7 @@ def calculate_loss(terms: LossTerms) -> dict:
     return {
         'ground_up_loss_kes': terms.ground_up_loss_kes,
         'deductible_kes': terms.deductible_kes,
+        'deductible_applied_kes': min(terms.ground_up_loss_kes, terms.deductible_kes),
         'policy_limit_kes': terms.policy_limit_kes,
         'gross_loss_kes': gross,
         'quota_share_ceded_pct': terms.quota_share_ceded_pct,

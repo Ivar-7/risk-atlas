@@ -24,6 +24,7 @@ class LossTermsTests(unittest.TestCase):
             quota_share_ceded_pct='0', cat_xol_applies=False,
         ))
         self.assertEqual(result['gross_loss_kes'], 0)
+        self.assertEqual(result['deductible_applied_kes'], Decimal('400000'))
         self.assertEqual(result['net_loss_kes'], 0)
 
     def test_missing_layer_and_invalid_share_are_rejected(self):

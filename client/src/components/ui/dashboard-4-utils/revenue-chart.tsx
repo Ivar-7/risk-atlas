@@ -5,12 +5,12 @@ import { scenarioLabel, type Scenario } from './model'
 import { Panel, PanelHeading } from './panel'
 import { chartTheme } from '../../../lib/chartTheme'
 
-export function RevenueChart({ run, scenario }: { run: RunResult; scenario: Scenario }) {
+export function RevenueChart({ run, scenario, compact = false }: { run: RunResult; scenario: Scenario; compact?: boolean }) {
   return (
     <Panel id="loss-curve" className="p-5 sm:p-6">
       <PanelHeading
         eyebrow="Financial engine"
-        title="Illustrative loss curve"
+        title={compact ? 'Loss across scenarios' : 'Illustrative loss curve'}
         description={`Ground-up and gross insured loss across ${run.scenarios.length} assumed return periods. ${run.controls.apply_drainage_correction ? 'This run includes the unvalidated drainage sensitivity.' : 'The dashed line shows the unvalidated drainage sensitivity.'}`}
         action={<span className="rounded-full border border-accent/20 bg-danger-tint px-3 py-1.5 text-[11px] text-danger">{scenarioLabel(scenario)} selected</span>}
       />
@@ -41,14 +41,17 @@ export function RevenueChart({ run, scenario }: { run: RunResult; scenario: Scen
         </ResponsiveContainer>
       </div>
       <div className="mt-3 flex flex-wrap gap-5 text-xs text-text-muted"><span className="flex items-center gap-2"><span className="h-0.5 w-5 bg-accent" /> Gross insured</span><span className="flex items-center gap-2"><span className="h-0.5 w-5 bg-brand-navy" /> Ground-up</span><span className="flex items-center gap-2"><span className="w-5 border-t-2 border-dashed border-steel-blue" /> {run.controls.apply_drainage_correction ? 'Proxy-only comparison' : 'Unvalidated drainage sensitivity'}</span></div>
-      <div className="mt-6 grid gap-3 sm:grid-cols-4">
+      {compact && <div className="mt-5 overflow-x-auto rounded-lg border border-border/70"><table className="w-full min-w-105 text-left text-xs"><thead className="bg-surface-alt text-text-muted"><tr><th className="px-3 py-2">Scenario</th><th className="px-3 py-2 text-right">Ground-up</th><th className="px-3 py-2 text-right">Gross insured</th></tr></thead><tbody>{[...run.scenarios].sort((a, b) => a.return_period_years - b.return_period_years).map((item) => <tr key={item.tier} className={`border-t border-border/70 ${item.tier === scenario.tier ? 'bg-danger-tint' : ''}`}><td className="px-3 py-2">{scenarioLabel(item)}</td><td className="px-3 py-2 text-right tabular-nums">{money(item.ground_up_loss_kes)}</td><td className="px-3 py-2 text-right font-semibold tabular-nums">{money(item.loss_kes)}</td></tr>)}</tbody></table></div>}
+      {!compact && <><div className="mt-6 overflow-x-auto rounded-lg border border-border/70"><table className="w-full min-w-130 text-left text-xs"><thead className="bg-surface-alt text-text-muted"><tr><th className="px-3 py-2">Source proxy tier</th><th className="px-3 py-2">Assumed return period</th><th className="px-3 py-2">Annual exceedance</th><th className="px-3 py-2 text-right">Ground-up loss</th><th className="px-3 py-2 text-right">Gross insured loss</th></tr></thead><tbody>{[...run.scenarios].sort((a, b) => a.return_period_years - b.return_period_years).map((item) => <tr key={item.tier} className="border-t border-border/70"><td className="px-3 py-2.5 capitalize">{item.tier}</td><td className="px-3 py-2.5">1-in-{item.return_period_years}</td><td className="px-3 py-2.5">{(item.annual_exceedance * 100).toFixed(1)}%</td><td className="px-3 py-2.5 text-right tabular-nums">{money(item.ground_up_loss_kes)}</td><td className="px-3 py-2.5 text-right font-medium tabular-nums">{money(item.loss_kes)}</td></tr>)}</tbody></table></div>
+      <p className="mt-2 text-xs leading-5 text-text-muted">The source “common” mask covers the widest area and is assigned the rarest event (1-in-250) so scenario losses rise with rarity. These file names and return periods are not measured event frequencies.</p></>}
+      {!compact && <div className="mt-6 grid gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">{scenarioLabel(scenario)} gross loss</p><p className="mt-2 text-xl font-semibold">{money(scenario.loss_kes)}</p></div>
         <div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">{scenarioLabel(scenario)} ground-up loss</p><p className="mt-2 text-xl font-semibold">{money(scenario.ground_up_loss_kes)}</p></div>
         <div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">Annual exceedance probability</p><p className="mt-2 text-xl font-semibold">{(scenario.annual_exceedance * 100).toFixed(1)}% <span className="text-xs font-normal text-muted-foreground">assumed</span></p></div>
         <div className="rounded-lg border border-border/70 p-4"><p className="text-xs text-muted-foreground">Affected sample value</p><p className="mt-2 text-xl font-semibold">{money(scenario.affected_tiv_kes)}</p><p className="mt-1 text-xs text-muted-foreground">{scenario.affected_locations} locations</p></div>
-      </div>
-      <p className="mt-4 text-xs leading-5 text-muted-foreground">Each building uses an assumed {run.controls.deductible_pct}% TIV deductible and {run.controls.policy_limit_pct}% TIV policy limit. A 1-in-{scenario.return_period_years} level means an assumed {(scenario.annual_exceedance * 100).toFixed(1)}% annual chance of exceeding this loss, not one event every {scenario.return_period_years} years. The line is illustrative because the proxy tiers have no measured frequency.</p>
-      <p className="mt-3 text-[11px] leading-5 text-text-muted">The drainage uplift is constructed around the 12 proxy-missed hotspot centres. Those same centres cannot validate predictive accuracy. The starter hazard tiers have no measured event frequency.</p>
+      </div>}
+      {!compact && <><p className="mt-4 text-xs leading-5 text-muted-foreground">Each building uses an assumed {run.controls.deductible_pct}% TIV deductible and {run.controls.policy_limit_pct}% TIV policy limit. A 1-in-{scenario.return_period_years} level means an assumed {(scenario.annual_exceedance * 100).toFixed(1)}% annual chance of exceeding this loss, not one event every {scenario.return_period_years} years. The line is illustrative because the proxy tiers have no measured frequency.</p>
+      <p className="mt-3 text-[11px] leading-5 text-text-muted">The drainage uplift is constructed around the 12 proxy-missed hotspot centres. Those same centres cannot validate predictive accuracy. The starter hazard tiers have no measured event frequency.</p></>}
     </Panel>
   )
 }

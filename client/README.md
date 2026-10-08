@@ -13,8 +13,8 @@ The site has four page entries:
 
 - `/` — self-contained Risk Atlas video hero in `index.html`. It can also be opened directly without a build step.
 - `/login/` — Risk Atlas sign-in design and direct demo access.
-- `/dashboard/` — responsive Nairobi flood risk overview using the latest backend model run and OpenStreetMap tiles. Requires the API.
-- `/app/` — dashboard and model workspace. The workspace uploads property documents, maps extracted coordinates, and calculates a single-occurrence loss waterfall from verified financial and treaty inputs. Requires the FastAPI service described in the repository README.
+- `/dashboard/` — underwriting summary for the latest Nairobi portfolio run. The model workspace at `#workspace` opens the summary at `#overview` after a run; detailed scenario, map, construction, evidence, and assumptions views have their own dashboard sections. Requires the API.
+- `/app/` — redirects to `/dashboard/#workspace`. The workspace also uploads property documents, maps extracted coordinates, and calculates a separate single-occurrence loss waterfall from reviewed financial and treaty inputs.
 
 The homepage uses the CloudFront video and poster URLs specified in the design prompt. Its navigation and calls to action link to the Nairobi dashboard, its sections, and sign-in.
 

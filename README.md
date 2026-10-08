@@ -56,9 +56,11 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/dashboard/` for the live API-backed overview. The
-dashboard sidebar contains the model workspace, document review, explanations,
-and the audit ledger. The old `/app/` path redirects to the workspace tab.
+Open `http://localhost:5173/dashboard/` for the live API-backed underwriting
+summary. A portfolio run from `#workspace` opens `#overview`, with loss,
+exposure, concentration, and review checks together. Detailed scenario, map,
+construction, evidence, and assumptions views remain in the sidebar. The old
+`/app/` path redirects to the workspace tab.
 The document review tab accepts text PDFs and `.docx` files, and includes the
 supplied PDF and Word offer as sample inputs. It shows extracted source evidence,
 the location proxy, and checks for the underwriter; it does not calculate a

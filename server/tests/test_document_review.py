@@ -3,7 +3,10 @@ from io import BytesIO
 import unittest
 from docx import Document
 
-from app.engine.document_review import review_document
+from app.engine.document_review import _modelled_financial_scenarios, review_document
+from app.engine.config_load import load_parameters
+from app.engine.vulnerability import damage_ratio
+import numpy as np
 
 
 SAMPLES = Path(__file__).resolve().parents[2] / 'client' / 'public' / 'test_documents'
@@ -24,6 +27,8 @@ class DocumentReviewTests(unittest.TestCase):
             self.assertTrue(all(score == 0 for score in result['model_evidence']['tiers'].values()))
             self.assertTrue(any('zero proxy signal is not proof' in check for check in result['advice']['checks']))
             self.assertTrue(any('residential RCC' in check for check in result['advice']['checks']))
+            self.assertEqual(len(result['financial_model']['scenarios']), 5)
+            self.assertTrue(all(scenario['ground_up_loss_kes'] == 0 for scenario in result['financial_model']['scenarios']))
         self.assertEqual({key: field['value'] for key, field in outcomes[0]['fields'].items()},
                          {key: field['value'] for key, field in outcomes[1]['fields'].items()})
 
@@ -65,6 +70,20 @@ class DocumentReviewTests(unittest.TestCase):
         self.assertEqual((evidence['latitude'], evidence['longitude']), (0.123456, 36.654321))
         self.assertFalse(evidence['proxy_covered'])
         self.assertEqual(evidence['tiers'], {})
+
+    def test_document_scenario_uses_point_score_vulnerability_and_stated_tiv(self):
+        fields = {
+            'total_insured_value': {'value': '1,000,000'},
+            'construction': {'value': 'RCC frame'},
+        }
+        evidence = {'proxy_covered': True, 'tiers': {tier: 0.5 for tier in ('common', 'occasional', 'moderate', 'severe', 'extreme')}}
+        model = _modelled_financial_scenarios(fields, evidence)
+        expected_ratio = damage_ratio(np.array([2.0]), np.array(['concrete_rcc']), load_parameters())[0]
+        self.assertEqual(model['tiv_kes'], 1_000_000)
+        self.assertEqual([row['return_period_years'] for row in model['scenarios']], [10, 25, 50, 100, 250])
+        for scenario in model['scenarios']:
+            self.assertAlmostEqual(scenario['damage_ratio'], expected_ratio)
+            self.assertEqual(scenario['ground_up_loss_kes'], round(expected_ratio * 1_000_000, 2))
 
 
 if __name__ == '__main__':

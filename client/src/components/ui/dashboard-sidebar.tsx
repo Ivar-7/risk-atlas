@@ -6,8 +6,8 @@ import {
 import type { RunResult } from '../../features/model/types'
 
 export const dashboardSections = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'loss-curve', label: 'Loss curve', icon: Activity },
+  { id: 'overview', label: 'Underwriting summary', icon: LayoutDashboard },
+  { id: 'loss-curve', label: 'Scenario detail', icon: Activity },
   { id: 'hazard-proxy', label: 'Hazard proxy', icon: Waves },
   { id: 'exposure-map', label: 'Exposure map', icon: MapPinned },
   { id: 'construction', label: 'Construction', icon: Layers3 },
@@ -77,7 +77,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch }: Props)
         </button>
       </div>
       {switcherOpen && <div className="absolute inset-x-0 top-13.5 z-50 rounded-lg border border-border bg-card p-1 shadow-xl">
-        <a href="#overview" onClick={(event) => { event.preventDefault(); setSwitcherOpen(false); navigate('overview') }} className="block rounded-md bg-surface-alt px-3 py-2 text-sm font-semibold text-brand-navy">Dashboard overview</a>
+        <a href="#overview" onClick={(event) => { event.preventDefault(); setSwitcherOpen(false); navigate('overview') }} className="block rounded-md bg-surface-alt px-3 py-2 text-sm font-semibold text-brand-navy">Underwriting summary</a>
         <a href="#workspace" onClick={(event) => { event.preventDefault(); setSwitcherOpen(false); navigate('workspace') }} className="mt-0.5 block rounded-md px-3 py-2 text-sm font-medium text-text-muted hover:bg-surface-alt">Model workspace</a>
       </div>}
     </div>
@@ -85,20 +85,20 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch }: Props)
     <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto" aria-label="Dashboard navigation">
       <div className="space-y-0.5">
         <button type="button" onClick={onSearch} className="group flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text"><Search size={16} strokeWidth={1.5} /> <span className="flex-1">Search</span><kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-text-muted group-hover:inline-flex">⌘K</kbd></button>
+        <NavLink id="workspace" activeId={activeId} onNavigate={navigate} />
         <NavLink id="overview" activeId={activeId} onNavigate={navigate} />
       </div>
-      <NavGroup title="Analysis">
+      <NavGroup title="Loss analysis">
         <NavLink id="loss-curve" activeId={activeId} onNavigate={navigate} badge={run?.scenarios.length} />
         <NavLink id="hazard-proxy" activeId={activeId} onNavigate={navigate} />
       </NavGroup>
-      <NavGroup title="Portfolio">
+      <NavGroup title="Exposure detail">
         <NavLink id="exposure-map" activeId={activeId} onNavigate={navigate} badge={run?.metrics.locations} />
         <NavLink id="construction" activeId={activeId} onNavigate={navigate} />
       </NavGroup>
-      <NavGroup title="Workspace">
+      <NavGroup title="Model evidence">
         <NavLink id="ai-evidence" activeId={activeId} onNavigate={navigate} />
         <NavLink id="assumptions" activeId={activeId} onNavigate={navigate} />
-        <NavLink id="workspace" activeId={activeId} onNavigate={navigate} />
       </NavGroup>
     </nav>
 

@@ -48,6 +48,13 @@ export type DocumentAssessment = {
   fields: Record<string, DocumentField>
   missing: string[]
   model_evidence: { latitude: number; longitude: number; proxy_covered: boolean; tiers: Record<string, number> } | null
+  financial_model: {
+    tiv_kes: number
+    housing_class: string
+    basis: string
+    construction_warning: string
+    scenarios: Array<{ tier: string; return_period_years: number; annual_exceedance: number; hazard_score: number; damage_ratio: number; ground_up_loss_kes: number }>
+  } | null
   advice: { status: string; summary: string; checks: string[] }
   limitations: string[]
 }
@@ -69,6 +76,7 @@ export type LossTerms = {
 export type LossCalculation = {
   ground_up_loss_kes: string
   deductible_kes: string
+  deductible_applied_kes: string
   policy_limit_kes: string
   gross_loss_kes: string
   quota_share_ceded_pct: string

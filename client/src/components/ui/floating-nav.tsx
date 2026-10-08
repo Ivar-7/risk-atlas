@@ -3,8 +3,8 @@ import { Ellipsis } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { dashboardSections, type DashboardSectionId } from './dashboard-sidebar'
 
-const mobileSectionIds = ['overview', 'hazard-proxy', 'exposure-map', 'assumptions', 'workspace'] as const satisfies readonly DashboardSectionId[]
-const moreSectionIds = ['loss-curve', 'construction', 'ai-evidence'] as const satisfies readonly DashboardSectionId[]
+const mobileSectionIds = ['workspace', 'overview', 'loss-curve', 'exposure-map'] as const satisfies readonly DashboardSectionId[]
+const moreSectionIds = ['hazard-proxy', 'construction', 'ai-evidence', 'assumptions'] as const satisfies readonly DashboardSectionId[]
 
 type FloatingNavProps = {
   activeId: DashboardSectionId
@@ -43,7 +43,7 @@ export default function FloatingNav({ activeId, onNavigate }: FloatingNavProps) 
         })}
       </motion.div>}
     </AnimatePresence>
-    <div className="grid grid-cols-6 rounded-xl border border-border bg-surface/95 p-1 shadow-dashboard backdrop-blur">
+    <div className="grid grid-cols-5 rounded-xl border border-border bg-surface/95 p-1 shadow-dashboard backdrop-blur">
       {mobileSectionIds.map((id) => {
         const section = dashboardSections.find((item) => item.id === id)!
         const Icon = section.icon

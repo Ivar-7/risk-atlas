@@ -9,6 +9,9 @@ from docx import Document
 from pypdf import PdfReader
 
 from app.engine.hazard_validation import TIERS, proxy_point_covered, proxy_score
+from app.engine.config_load import load_parameters
+from app.engine.vulnerability import damage_ratio
+import numpy as np
 
 MAX_BYTES = 10 * 1024 * 1024
 MAX_PAGES = 60
@@ -72,6 +75,47 @@ def _first(*values):
     return next((value for value in values if value), None)
 
 
+def _modelled_financial_scenarios(fields: dict, evidence: dict | None) -> dict | None:
+    """Illustrative physical loss from document TIV and point proxy, never a coverage decision."""
+    if not evidence or not evidence['proxy_covered'] or not fields['total_insured_value'] or not fields['construction']:
+        return None
+    construction = fields['construction']['value'].lower()
+    if 'rcc' in construction or 'reinforced concrete' in construction or 'concrete' in construction:
+        klass = 'concrete_rcc'
+    elif 'masonry' in construction or 'brick' in construction:
+        klass = 'permanent_masonry'
+    elif 'semi-permanent' in construction or 'semi permanent' in construction:
+        klass = 'semi_permanent'
+    elif 'iron sheet' in construction or 'informal' in construction:
+        klass = 'informal_iron_sheet'
+    else:
+        return None
+    tiv = float(fields['total_insured_value']['value'].replace(',', ''))
+    if not np.isfinite(tiv) or tiv <= 0:
+        return None
+    params = load_parameters()
+    scenarios = []
+    for tier, spec in sorted(params['return_periods'].items(), key=lambda item: item[1]['years']):
+        score = float(evidence['tiers'][tier])
+        depth = score * float(params['hazard']['max_depth_m'])
+        ratio = float(damage_ratio(np.array([depth]), np.array([klass]), params)[0])
+        scenarios.append({
+            'tier': tier,
+            'return_period_years': spec['years'],
+            'annual_exceedance': spec['annual_exceedance'],
+            'hazard_score': score,
+            'damage_ratio': ratio,
+            'ground_up_loss_kes': round(ratio * tiv, 2),
+        })
+    return {
+        'tiv_kes': tiv,
+        'housing_class': klass,
+        'basis': 'Point proxy score × assumed maximum depth, then the adapted JRC Africa residential vulnerability function × document-stated TIV.',
+        'construction_warning': 'The vulnerability curve is adapted from residential reference data. Verify that it applies to this property; this is not a calibrated claims estimate.',
+        'scenarios': scenarios,
+    }
+
+
 def review_document(filename: str, data: bytes) -> dict:
     lines = _lines(filename, data)
     fields = {
@@ -85,7 +129,7 @@ def review_document(filename: str, data: bytes) -> dict:
         'pump_capacity': _find(lines, r'Sump pump capacity:\s*(.+)', 1),
         'coverage': _first(_find(lines, r'\bCOVERAGE TYPE:\s*(.+)', 1), _find(lines, r'\b(?:COVER|COVERAGE):\s*(.+)', 1)),
         'total_insured_value': _first(_find(lines, r'full TIV\s*\(KES\s*([\d,]+)\)', 1), _find(lines, r'\b(?:TOTAL INSURED VALUE|SUM INSURED|TIV)\s*[:=]\s*(?:KES\s*)?([\d,]+)', 1)),
-        'flood_deductible': _first(_find(lines, r'(5% deductible or KES\s*[\d,]+\s*minimum)', 1), _find(lines, r'\b(?:FLOOD\s+)?DEDUCTIBLE\s*[:=]\s*(.+)', 1)),
+        'flood_deductible': _first(_find(lines, r'(\d+(?:\.\d+)?% deductible or KES\s*[\d,]+\s*minimum)', 1), _find(lines, r'\b(?:FLOOD\s+)?DEDUCTIBLE\s*[:=]\s*(.+)', 1)),
         'ground_up_loss': _find(lines, r'\bGROUND[ -]UP LOSS\s*[:=]\s*(?:KES\s*)?([\d,]+(?:\.\d+)?)', 1),
         'limit': _find(lines, r'\b(?:(?:POLICY|FLOOD|COVERAGE)\s+)?LIMIT\s*[:=]\s*(?:KES\s*)?([\d,]+(?:\.\d+)?)', 1),
         'gross_loss': _find(lines, r'\bGROSS LOSS\s*[:=]\s*(?:KES\s*)?([\d,]+(?:\.\d+)?)', 1),
@@ -152,6 +196,7 @@ def review_document(filename: str, data: bytes) -> dict:
         'fields': {key: value for key, value in fields.items() if value},
         'missing': missing,
         'model_evidence': scores,
+        'financial_model': _modelled_financial_scenarios(fields, scores),
         'advice': {
             'status': 'Underwriter review required',
             'summary': 'Do not infer a flood premium, limit, or acceptance decision from this document and the point proxy alone. Review source claims and the checks below before deciding terms.',
