@@ -5,7 +5,7 @@ import { scenarioLabel, type Scenario } from './model'
 
 export function DashboardStats({ run, scenario }: { run: RunResult; scenario: Scenario }) {
   const stats = [
-    { label: 'Total insured value', value: money(run.metrics.total_tiv_kes), detail: `${run.metrics.locations.toLocaleString('en-KE')} locations · ${run.metrics.synthetic_locations} declared synthetic`, icon: Building2 },
+    { label: 'Total insured value', value: money(run.metrics.total_tiv_kes), detail: `${run.metrics.locations.toLocaleString('en-KE')} locations · ${run.metrics.synthetic_locations} sample records`, icon: Building2 },
     { label: `${scenarioLabel(scenario)} gross loss`, value: money(scenario.loss_kes), detail: 'Modelled from the current run', icon: Activity },
     { label: 'Locations with modelled loss', value: `${scenario.affected_locations} / ${run.metrics.locations}`, detail: `${money(scenario.affected_tiv_kes)} in affected value`, icon: Waves },
     { label: 'Annual average loss', value: money(run.metrics.aal_kes), detail: 'Integrated from assumed event frequencies', icon: Radar },

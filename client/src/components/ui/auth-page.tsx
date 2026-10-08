@@ -61,7 +61,7 @@ export function AuthPage() {
           <div className="flex flex-col space-y-1">
             <h1 className="text-2xl font-bold tracking-wide">Sign in to the workspace</h1>
             <p className="text-muted-foreground text-base">
-              Access the Nairobi flood model and synthetic portfolio.
+              Access the Nairobi flood model and sample portfolio.
             </p>
           </div>
 

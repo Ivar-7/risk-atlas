@@ -9,8 +9,25 @@ Start the model API from the repository root:
 ```bash
 python -m venv server/.venv
 server/.venv/bin/pip install -r server/requirements.txt
+cp .env.example .env
+# Add your Neon pooled DATABASE_URL to .env
 PYTHONPATH=server server/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
+
+In Neon, open the `risk-atlas` project, select the `production` branch, and
+copy its pooled PostgreSQL connection string from **Connect**. Set that string
+as `DATABASE_URL` in the root `.env` file. The backend loads `.env`, requires
+TLS for database connections, and creates `app_users`, `auth_sessions`, and
+`model_runs` on startup. Never put the connection string in `client/` or a
+`VITE_*` variable. When deployed behind an HTTPS reverse proxy, set
+`RISK_ATLAS_SECURE_COOKIES=true`. The server needs its own persistent process;
+Vite only proxies `/api` during local development.
+
+Registration and sign-in use Argon2 password hashes and HTTP-only session
+cookies. Model runs are saved in Neon and can be fetched by ID after an API
+restart. The sample dashboard remains publicly viewable, while account actions
+require the database. Without `DATABASE_URL`, model preview endpoints still
+work, but registration and sign-in return a configuration error.
 
 In another terminal, start the frontend:
 

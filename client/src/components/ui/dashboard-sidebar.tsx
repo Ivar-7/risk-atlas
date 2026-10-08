@@ -105,7 +105,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose 
     </nav>
 
     <div className="mt-auto space-y-3 border-t border-border/60 pt-4">
-      <div className="rounded-lg border border-primary/15 bg-primary/5 p-3"><p className="flex items-center gap-2 text-xs font-medium text-primary"><ShieldCheck size={15} /> Current model run</p><p className="mt-2 text-[11px] leading-5 text-muted-foreground">{run ? `${run.metrics.locations} locations · ${run.metrics.synthetic_locations} declared synthetic` : 'Waiting for model API'}</p></div>
+      <div className="rounded-lg border border-primary/15 bg-primary/5 p-3"><p className="flex items-center gap-2 text-xs font-medium text-primary"><ShieldCheck size={15} /> Current model run</p><p className="mt-2 text-[11px] leading-5 text-muted-foreground">{run ? `${run.metrics.locations} locations · ${run.metrics.synthetic_locations} sample records` : 'Waiting for model API'}</p></div>
       <a href="/" className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-muted-foreground hover:bg-white/5 hover:text-foreground"><ArrowLeft size={16} strokeWidth={1.5} /> Back to site</a>
     </div>
   </div>

@@ -39,7 +39,7 @@ export function constructionColor(index: number): string {
 }
 
 export function downloadScenario(run: RunResult, scenario: Scenario): void {
-  const columns = ['location_id', 'synthetic', 'latitude', 'longitude', 'housing_class', 'tiv_kes', 'proxy_tier', 'susceptibility_score', 'modelled_gross_loss_kes']
+  const columns = ['location_id', 'sample_record', 'latitude', 'longitude', 'housing_class', 'tiv_kes', 'proxy_tier', 'susceptibility_score', 'modelled_gross_loss_kes']
   const escapeCsv = (value: string | number | boolean) => `"${String(value).replaceAll('"', '""')}"`
   const lines = run.locations.map((location) => [
     location.loc_id, location.synthetic, location.lat, location.lon, location.housing_class,

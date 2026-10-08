@@ -2,6 +2,13 @@
 
 Run `PYTHONPATH=server server/.venv/bin/python -m uvicorn app.main:app --port 8000` from the repository root. The frontend proxies `/api` to this service in development.
 
+Set `DATABASE_URL` to the Neon pooled PostgreSQL URL in the root `.env` file for account and run persistence. The API initializes its tables on startup. Sessions use HTTP-only cookies.
+
+- `POST /api/auth/register` — create an account with `full_name`, `email`, and `password` (8–128 characters); starts a session.
+- `POST /api/auth/login` — sign in with `email` and `password`; starts a session.
+- `GET /api/auth/me` — return the signed-in user or `null`.
+- `POST /api/auth/logout` — revoke the current session.
+
 - `GET /api/health` — service status and latest run ID.
 - `GET /api/defaults` — model parameters and assumptions.
 - `GET /api/runs/latest` — most recent in-memory run.

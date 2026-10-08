@@ -18,3 +18,11 @@ export function pct(value: number, digits = 1) {
 export function clsLabel(value: string) {
   return value.replaceAll("_", " ");
 }
+
+/** Keep wording consistent when older saved runs still contain prior labels. */
+export function presentModelText(value: string) {
+  return value
+    .replaceAll(/\bSYNTHETIC\b/g, 'SAMPLE')
+    .replaceAll(/\bSynthetic\b/g, 'Sample')
+    .replaceAll(/\bsynthetic\b/g, 'sample');
+}

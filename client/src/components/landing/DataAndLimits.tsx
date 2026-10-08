@@ -11,7 +11,7 @@ export function DataAndLimits() {
             <h3 className="text-lg font-semibold">Data used</h3>
             <dl className="mt-5 space-y-5 text-sm leading-6">
               <div><dt className="font-semibold">Real</dt><dd className="text-[#6B7280]">{dataAndLimits.real}</dd></div>
-              <div><dt className="font-semibold">Synthetic</dt><dd className="text-[#6B7280]">{dataAndLimits.synthetic}</dd></div>
+              <div><dt className="font-semibold">Sample exposure</dt><dd className="text-[#6B7280]">{dataAndLimits.sample}</dd></div>
               <div><dt className="font-semibold">Proxy</dt><dd className="text-[#6B7280]">{dataAndLimits.proxy}</dd></div>
             </dl>
           </Reveal>

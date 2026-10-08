@@ -4,17 +4,21 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
+import os
 
-from fastapi import FastAPI, HTTPException
+import psycopg
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import SESSION_DAYS, authenticate, create_session, delete_session, register_user, session_user
 from app.audit.ledger import append_run, read_ledger, verify_chain
+from app.database import configured as database_configured, initialize as initialize_database, load_latest_run, load_run, save_run
 from app.engine.config_load import load_assumptions, load_parameters
 from app.engine.ingestion import IngestedData, load_portfolio
 from app.engine.pipeline import run_model
 from app.engine.exposure_preview import ai_available, preview_exposure
 from app.engine.vulnerability import vulnerability_matrix
-from app.schemas import PreviewRequest, RunRequest
+from app.schemas import LoginRequest, PreviewRequest, RegisterRequest, RunRequest
 
 STORE: dict[str, dict[str, Any]] = {}
 PREVIEWS: dict[str, dict[str, Any]] = {}
@@ -29,15 +33,17 @@ def _public(result: dict[str, Any]) -> dict[str, Any]:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     global PORTFOLIO, LATEST
+    initialize_database()
     PORTFOLIO = load_portfolio()
     result = run_model({"apply_drainage_correction": True, "free_text": ""}, ingested=PORTFOLIO)
+    save_run(result)
     STORE[result["run_id"]] = result
     append_run(result)
     LATEST = result["run_id"]
     yield
 
 
-app = FastAPI(title="Nairobi Urban Flood CAT · Team A", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Risk Atlas API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -48,7 +54,66 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "locations": PORTFOLIO.row_count if PORTFOLIO else 0, "latest_run_id": LATEST}
+    return {"status": "ok", "locations": PORTFOLIO.row_count if PORTFOLIO else 0, "latest_run_id": LATEST, "database_configured": database_configured()}
+
+
+def _require_database() -> None:
+    if not database_configured():
+        raise HTTPException(503, "Account database is not configured")
+
+
+def _session_cookie(response: Response, request: Request, token: str) -> None:
+    secure = request.url.scheme == "https" or os.getenv("RISK_ATLAS_SECURE_COOKIES", "").lower() == "true"
+    response.set_cookie(
+        "risk_atlas_session", token, max_age=SESSION_DAYS * 86400, httponly=True,
+        secure=secure, samesite="lax", path="/",
+    )
+
+
+@app.post("/api/auth/register", status_code=201)
+def register(body: RegisterRequest, request: Request, response: Response):
+    _require_database()
+    try:
+        user = register_user(body.full_name, str(body.email), body.password)
+        if user is None:
+            raise HTTPException(409, "An account with this email already exists")
+        _session_cookie(response, request, create_session(user["id"]))
+        return {"user": user}
+    except psycopg.Error as exc:
+        raise HTTPException(503, "Account database is unavailable") from exc
+
+
+@app.post("/api/auth/login")
+def login(body: LoginRequest, request: Request, response: Response):
+    _require_database()
+    try:
+        user = authenticate(str(body.email), body.password)
+        if user is None:
+            raise HTTPException(401, "Invalid email or password")
+        _session_cookie(response, request, create_session(user["id"]))
+        return {"user": user}
+    except psycopg.Error as exc:
+        raise HTTPException(503, "Account database is unavailable") from exc
+
+
+@app.get("/api/auth/me")
+def current_user(request: Request):
+    _require_database()
+    try:
+        return {"user": session_user(request.cookies.get("risk_atlas_session"))}
+    except psycopg.Error as exc:
+        raise HTTPException(503, "Account database is unavailable") from exc
+
+
+@app.post("/api/auth/logout")
+def logout(request: Request, response: Response):
+    if database_configured():
+        try:
+            delete_session(request.cookies.get("risk_atlas_session"))
+        except psycopg.Error as exc:
+            raise HTTPException(503, "Account database is unavailable") from exc
+    response.delete_cookie("risk_atlas_session", path="/")
+    return {"ok": True}
 
 
 @app.get("/api/defaults")
@@ -105,6 +170,7 @@ def create_run(body: RunRequest):
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     STORE[result["run_id"]] = result
+    save_run(result)
     record = append_run(result)
     LATEST = result["run_id"]
     payload = _public(result)
@@ -114,26 +180,29 @@ def create_run(body: RunRequest):
 
 @app.get("/api/runs/latest")
 def latest_run():
-    if not LATEST or LATEST not in STORE:
+    result = STORE.get(LATEST or "") or load_latest_run()
+    if not result:
         raise HTTPException(404, "No run available")
-    return _public(STORE[LATEST])
+    return _public(result)
 
 
 @app.get("/api/runs/{run_id}")
 def get_run(run_id: str):
-    if run_id not in STORE:
+    result = STORE.get(run_id) or load_run(run_id)
+    if not result:
         raise HTTPException(404, "Unknown run_id")
-    return _public(STORE[run_id])
+    return _public(result)
 
 
 @app.get("/api/runs/{run_id}/explain/{loc_id}")
 def explain_location(run_id: str, loc_id: str):
-    if run_id not in STORE:
+    result = STORE.get(run_id) or load_run(run_id)
+    if not result:
         raise HTTPException(404, "Unknown run_id")
-    explanation = STORE[run_id]["explanations"].get(loc_id)
+    explanation = result["explanations"].get(loc_id)
     if not explanation:
         raise HTTPException(404, "Unknown loc_id")
-    location = next((row for row in STORE[run_id]["locations"] if row["loc_id"] == loc_id), None)
+    location = next((row for row in result["locations"] if row["loc_id"] == loc_id), None)
     return {"location": location, **explanation}
 
 

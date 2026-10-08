@@ -173,7 +173,7 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
         "controls": {"apply_drainage_correction": apply_drainage, "free_text": free_text, "exposure_source": parse_meta["source"]},
         "input_hashes": {"exposure": data.exposure_hash, "hotspots": data.hotspots_hash},
         "labels": {
-            "exposure": f"{synthetic_count} of {len(corrected)} rows declared synthetic by the input CSV or free-text parser; provenance is not independently verified",
+            "exposure": f"{synthetic_count} of {len(corrected)} rows are sample exposure records from the input CSV or free-text parser; provenance is not independently verified",
             "hotspots": f"{len(data.hotspots)} geocoded named hotspots from the input CSV",
             "hazard": "PROXY (not measured flood depth)",
             "depth_conversion": "ASSUMPTION (score × 4 m, per problem statement example)",
@@ -182,7 +182,7 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
             "loss": "MODELLED ground-up (treaty layers out of scope)",
         },
         "disclaimer": (
-            f"{synthetic_count} of {len(corrected)} exposure locations are declared synthetic. "
+            f"{synthetic_count} of {len(corrected)} exposure locations are sample records. "
             "Hazard is a constructed pluvial proxy. Return periods and the 4 m depth scale are assumptions. "
             "Portfolio provenance must be verified before operational use."
         ),

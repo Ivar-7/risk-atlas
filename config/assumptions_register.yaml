@@ -2,7 +2,7 @@ assumptions:
   - id: DATA-001
     provenance: SYNTHETIC
     title: Building portfolio
-    statement: "600 locations in exposure_nairobi_with_hazard.csv are a generated starter-kit portfolio, not Kenya Re or any cedant book."
+    statement: "The 600 locations in exposure_nairobi_with_hazard.csv form a sample portfolio, not a Kenya Re or cedant book."
   - id: DATA-002
     provenance: REAL
     title: Named flood hotspots
@@ -38,4 +38,4 @@ assumptions:
   - id: AI-001
     provenance: CONDITIONAL
     title: Reviewed free-text exposure
-    statement: "When OpenAI extraction is configured and its structured output is reviewed, model-extracted synthetic buildings change total exposure and loss. Without that service, strict rules can preview explicit values but are not AI."
+    statement: "When OpenAI extraction is configured and its structured output is reviewed, model-extracted sample buildings change total exposure and loss. Without that service, strict rules can preview explicit values but are not AI."

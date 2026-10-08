@@ -23,6 +23,7 @@ export default defineConfig({
         home: fileURLToPath(new URL('./index.html', import.meta.url)),
         dashboard: fileURLToPath(new URL('./dashboard/index.html', import.meta.url)),
         login: fileURLToPath(new URL('./login/index.html', import.meta.url)),
+        register: fileURLToPath(new URL('./register/index.html', import.meta.url)),
         app: fileURLToPath(new URL('./app/index.html', import.meta.url)),
       },
     },

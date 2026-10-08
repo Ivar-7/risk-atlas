@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10294F">
-  <meta name="description" content="Risk Atlas: flood risk intelligence for Nairobi. Explore proxy hazard, synthetic exposure and illustrative flood loss.">
+  <meta name="description" content="Risk Atlas: flood risk intelligence for Nairobi. Explore mapped terrain and rivers, sample exposure and illustrative flood loss.">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="/assets/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -25,6 +25,7 @@
        mounted below it are reachable. */
     html { height: 100%; }
     body { margin: 0; padding: 0; min-height: 100%; background: #000; }
+    .landing-page { min-width: 0; }
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
@@ -113,12 +114,12 @@
     }
   </style>
   <script>
-    if (['/dashboard', '/login', '/app'].includes(location.pathname)) {
+    if (['/dashboard', '/login', '/register', '/app'].includes(location.pathname)) {
       location.replace(location.pathname + '/');
     }
   </script>
 </head>
-<body>
+<body class="landing-page">
   <div id="landing-header" class="sticky top-0 z-50 -mb-px h-px"></div>
   <main>
   <section class="hero" aria-label="Risk Atlas flood model">

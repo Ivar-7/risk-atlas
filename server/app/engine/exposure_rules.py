@@ -109,7 +109,7 @@ def parse_free_text(text: str, hotspots: pd.DataFrame, seed: int = 7) -> tuple[p
                 }
             )
             seq += 1
-        notes.append(f"Added {count} synthetic {housing} buildings near {place} at KES {tiv:,.0f} TIV each.")
+        notes.append(f"Added {count} sample {housing} buildings near {place} at KES {tiv:,.0f} TIV each.")
 
     return pd.DataFrame(records), {
         "parsed": bool(records),
@@ -146,4 +146,4 @@ def exposure_from_groups(groups: list[dict], hotspots: pd.DataFrame, seed: int =
                 "housing_class": klass, "floor_area_m2": 40, "cost_per_m2_kes": tiv / 40,
                 "tiv_kes": tiv, "synthetic": True, "source": "reviewed free-text exposure",
             })
-    return pd.DataFrame(records), {"parsed": bool(records), "rows_added": len(records), "groups": checked, "notes": ["Rows are synthetic and placed near approximate hotspot centres."]}
+    return pd.DataFrame(records), {"parsed": bool(records), "rows_added": len(records), "groups": checked, "notes": ["Sample rows are placed near approximate hotspot centres."]}

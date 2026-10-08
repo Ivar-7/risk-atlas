@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react'
 import gsap from 'gsap'
 import { CustomEase } from 'gsap/CustomEase'
 import { useReducedMotion } from 'motion/react'
+import { GetStartedButton } from './get-started-button'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(CustomEase)
@@ -107,7 +108,11 @@ export function KineticNavigation({ links, pastHero }: { links: NavigationLink[]
       }
       if (event.key !== 'Tab') return
 
-      const focusables = [buttonRef.current, ...Array.from(overlayRef.current?.querySelectorAll<HTMLAnchorElement>('a') ?? [])].filter((element): element is HTMLAnchorElement | HTMLButtonElement => element !== null)
+      const focusables = [
+        ...Array.from(rootRef.current?.querySelectorAll<HTMLAnchorElement>('[data-header-action]') ?? []),
+        buttonRef.current,
+        ...Array.from(overlayRef.current?.querySelectorAll<HTMLAnchorElement>('a') ?? []),
+      ].filter((element): element is HTMLAnchorElement | HTMLButtonElement => element !== null)
       const first = focusables[0]
       const last = focusables[focusables.length - 1]
       if (!first || !last) return
@@ -144,25 +149,29 @@ export function KineticNavigation({ links, pastHero }: { links: NavigationLink[]
   return (
     <div ref={rootRef}>
       <header className={`relative z-20 border-b [font-family:'Plus_Jakarta_Sans',system-ui,sans-serif] transition-[border-color,background-color,backdrop-filter] duration-200 ${pastHero ? 'border-[#10294F]/10 bg-white/95 text-[#10294F] backdrop-blur-sm' : open ? 'border-transparent bg-[#10294F]/90 text-white backdrop-blur-sm' : 'border-transparent bg-transparent text-white'}`}>
-        <div className="flex h-16 w-full items-center justify-between px-5 sm:px-6 lg:px-8">
+        <div className="flex h-16 w-full items-center justify-between gap-1 px-5 max-[360px]:px-2 sm:gap-2 sm:px-6 lg:px-8">
           <a href="/" aria-label="Risk Atlas home" className="shrink-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D8184B]">
-            <img src={pastHero ? '/assets/logo-horizontal.svg' : '/assets/logo-horizontal-dark.svg'} alt="Risk Atlas" className="h-8 w-auto" />
+            <img src={pastHero ? '/assets/logo-horizontal.svg' : '/assets/logo-horizontal-dark.svg'} alt="Risk Atlas" className="h-8 w-auto max-[360px]:h-[26px]" />
           </a>
-          <button
-            ref={buttonRef}
-            type="button"
-            aria-controls="landing-menu"
-            aria-expanded={open}
-            aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
-            onClick={() => {
-              restoreFocusRef.current = open
-              setOpen((value) => !value)
-            }}
-            className={`inline-flex h-10 items-center gap-3 rounded-full border px-4 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 ${pastHero ? 'border-[#10294F]/20 hover:border-[#D8184B] hover:text-[#D8184B] focus-visible:outline-[#D8184B]' : 'border-white/40 hover:border-white hover:bg-white/10 focus-visible:outline-white'}`}
-          >
-            <span>{open ? 'Close' : 'Menu'}</span>
-            {open ? <X size={18} strokeWidth={1.75} aria-hidden="true" /> : <Menu size={18} strokeWidth={1.75} aria-hidden="true" />}
-          </button>
+          <div className="flex shrink-0 items-center gap-1 max-[360px]:gap-0.5 sm:gap-2">
+            <GetStartedButton href="/login/" label="Log in" compactLabel="Login" variant="outline" onLight={pastHero} />
+            <GetStartedButton href="/register/" label="Get Started" compactLabel="Start" />
+            <button
+              ref={buttonRef}
+              type="button"
+              aria-controls="landing-menu"
+              aria-expanded={open}
+              aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
+              onClick={() => {
+                restoreFocusRef.current = open
+                setOpen((value) => !value)
+              }}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 max-[360px]:h-8 max-[360px]:w-8 sm:h-10 sm:w-auto sm:gap-3 sm:px-4 ${pastHero ? 'border-[#10294F]/20 hover:border-[#D8184B] hover:text-[#D8184B] focus-visible:outline-[#D8184B]' : 'border-white/40 hover:border-white hover:bg-white/10 focus-visible:outline-white'}`}
+            >
+              <span className="hidden sm:inline">{open ? 'Close' : 'Menu'}</span>
+              {open ? <X size={18} strokeWidth={1.75} aria-hidden="true" /> : <Menu size={18} strokeWidth={1.75} aria-hidden="true" />}
+            </button>
+          </div>
         </div>
       </header>
 

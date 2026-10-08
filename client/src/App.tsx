@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import DashboardLoader from './components/ui/v-skeleton-8'
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -11,6 +12,7 @@ export function navigate(path: string) {
 
 export default function App() {
   if (window.location.pathname.startsWith('/login')) return <LoginPage />
+  if (window.location.pathname.startsWith('/register')) return <RegisterPage />
   if (window.location.pathname.startsWith('/dashboard')) {
     return <Suspense fallback={<DashboardLoader />}><DashboardPage /></Suspense>
   }

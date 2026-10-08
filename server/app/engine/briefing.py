@@ -16,7 +16,7 @@ def underwriter_briefing(result: dict[str, Any]) -> str:
     return (
         f"Nairobi pluvial flood — underwriter note (prototype).\n\n"
         f"Portfolio: {m['locations']} buildings, total insured value {m['total_tiv_kes']:,.0f} KES. "
-        f"This book is SYNTHETIC. Do not treat it as a cedant submission.\n\n"
+        f"This is a sample portfolio, not a cedant submission.\n\n"
         f"At the assumed 1-in-100 level (occasional proxy mask) modelled ground-up loss is "
         f"{loss_100['loss_kes']:,.0f} KES. At the assumed 1-in-250 level (common proxy mask) it is "
         f"{loss_250['loss_kes']:,.0f} KES. Average annual loss implied by the assumed EP mapping is "
