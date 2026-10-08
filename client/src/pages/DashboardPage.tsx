@@ -2,18 +2,21 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { UserButton, useAuth, useUser } from '@clerk/react'
 import { BarChart3, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, X } from 'lucide-react'
 import Dashboard from '../components/ui/dashboard-4'
+import { PropertyUnderwritingSummary } from '../components/ui/property-underwriting-summary'
+import { SubmittedExposureSummary } from '../components/ui/submitted-exposure-summary'
 import FloatingNav from '../components/ui/floating-nav'
 import { validateDashboardRun } from '../components/ui/dashboard-4-utils/model'
 import { DashboardSidebar, dashboardSections, type DashboardSectionId } from '../components/ui/dashboard-sidebar'
 import DashboardLoader from '../components/ui/v-skeleton-8'
 import CatModelRunner from '../features/model/CatModelRunner'
 const ModelWorkspace = lazy(() => import('./ModelWorkspace'))
-import { fetchLatest, setApiTokenGetter, type DocumentAssessment } from '../features/model/api'
+import { fetchLatest, refreshSavedRun, setApiTokenGetter, type DocumentAssessment, type PropertyCalculation } from '../features/model/api'
 import { money } from '../features/model/format'
 import type { RunResult } from '../features/model/types'
 
 const sectionDescriptions: Record<DashboardSectionId, string> = {
-  overview: 'Loss, exposure, concentration and decision checks from the latest run, together in one place.',
+  overview: 'Loss and underwriting checks for the exposure in your latest calculation.',
+  portfolio: 'Aggregate loss and concentration across the synthetic Nairobi portfolio.',
   'loss-curve': 'Inspect the complete ground-up and gross insured scenario table and curve.',
   'hazard-proxy': 'See how many portfolio locations have modelled loss at each proxy tier.',
   'exposure-map': 'Explore modelled locations and named hotspots on OpenStreetMap.',
@@ -35,6 +38,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [run, setRun] = useState<RunResult | null>(null)
   const [assessment, setAssessment] = useState<DocumentAssessment | null>(null)
+  const [propertyCalculation, setPropertyCalculation] = useState<PropertyCalculation | null>(null)
+  const [summaryTarget, setSummaryTarget] = useState<'property' | 'submission'>('submission')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [greeting, setGreeting] = useState(timeGreeting)
@@ -46,7 +51,13 @@ export default function DashboardPage() {
     setLoading(true)
     setError('')
     try {
-      const latest = await fetchLatest()
+      let latest = await fetchLatest()
+      try {
+        validateDashboardRun(latest)
+      } catch (reason) {
+        if (!(reason instanceof Error) || !reason.message.includes('saved portfolio run')) throw reason
+        latest = await refreshSavedRun(latest.run_id)
+      }
       validateDashboardRun(latest)
       setRun(latest)
     } catch (reason) {
@@ -103,10 +114,20 @@ export default function DashboardPage() {
     validateDashboardRun(result)
     setRun(result)
     setError('')
+    if (result.interventions.free_text.rows_added > 0) {
+      setSummaryTarget('submission')
+      navigateSection('overview')
+    } else navigateSection('portfolio')
+  }
+  const acceptPropertyCalculation = (calculation: PropertyCalculation) => {
+    setPropertyCalculation(calculation)
+    setSummaryTarget('property')
     navigateSection('overview')
   }
   const searchResults = dashboardSections.filter((section) => section.label.toLowerCase().includes(searchTerm.trim().toLowerCase()))
   const activeTitle = dashboardSections.find((section) => section.id === activeSection)?.label ?? 'Overview'
+  const needsRerun = error.includes('saved portfolio run') || error.includes('model API is missing')
+  const showRunError = error && activeSection !== 'workspace' && !(activeSection === 'overview' && summaryTarget === 'property' && propertyCalculation)
 
   if (loading && !run) return <DashboardLoader />
 
@@ -131,17 +152,23 @@ export default function DashboardPage() {
       <main id="overview" className="mx-auto max-w-[1600px] scroll-mt-20 px-5 pb-24 pt-7 sm:px-7 lg:pb-12 xl:px-9">
         <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div><p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent">Risk Atlas workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{activeTitle}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{sectionDescriptions[activeSection]}</p></div>
-          {run && activeSection === 'overview' && <button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover">Run another model</button>}
-          {run && activeSection !== 'workspace' && activeSection !== 'overview' && <span className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted"><BarChart3 size={15} />{run.scenarios.length} assumed scenarios</span>}
+          {activeSection === 'overview' && (propertyCalculation || run?.interventions.free_text.rows_added) && <button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover">Review model inputs</button>}
+          {run && activeSection === 'portfolio' && <button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover">Run another model</button>}
+          {run && activeSection !== 'workspace' && activeSection !== 'overview' && activeSection !== 'portfolio' && <span className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted"><BarChart3 size={15} />{run.scenarios.length} assumed scenarios</span>}
         </div>
 
-        {run && activeSection !== 'workspace' && activeSection !== 'overview' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
+        {run && activeSection !== 'workspace' && activeSection !== 'overview' && activeSection !== 'portfolio' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
           <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Model run</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-2 text-xs font-medium text-accent">Synthetic portfolio · proxy flood hazard · illustrative return periods</p><p className="mt-3 text-sm text-text-muted">Gross insured AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations</p></div>
           <div className="flex items-center gap-3"><button type="button" onClick={() => void reload()} disabled={loading} className="flex items-center gap-2 rounded-md border border-brand-navy/20 bg-surface px-3 py-2 text-sm text-text hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw size={15} />Refresh</button><button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">Run model</button></div>
         </section>}
-        {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>Dashboard data is temporarily unavailable. Please try again.</span><button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div>}
-        {activeSection === 'workspace' && <div className="space-y-8"><CatModelRunner onRun={acceptRun} /><div className="border-t border-border pt-7"><Suspense fallback={<DashboardLoader />}><ModelWorkspace assessment={assessment} onReviewed={setAssessment} /></Suspense></div></div>}
-        {run && activeSection !== 'workspace' && <section aria-label={`${activeTitle} dashboard section`}><Dashboard run={run} activeSection={activeSection} onNavigate={navigateSection} /></section>}
+        {showRunError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>{error}</span><div className="flex gap-4">{needsRerun && <button type="button" onClick={() => navigateSection('workspace')} className="underline">Run updated model</button>}<button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div></div>}
+        {activeSection === 'workspace' && <div className="space-y-8"><CatModelRunner onRun={acceptRun} /><div className="border-t border-border pt-7"><Suspense fallback={<DashboardLoader />}><ModelWorkspace assessment={assessment} calculation={propertyCalculation} onReviewed={setAssessment} onCalculated={acceptPropertyCalculation} onInvalidated={() => setPropertyCalculation(null)} /></Suspense></div></div>}
+        {activeSection === 'overview' && (summaryTarget === 'property'
+          ? <PropertyUnderwritingSummary calculation={propertyCalculation} onNavigate={navigateSection} />
+          : run?.interventions.free_text.rows_added
+            ? <SubmittedExposureSummary run={run} onNavigate={navigateSection} />
+            : <PropertyUnderwritingSummary calculation={null} onNavigate={navigateSection} />)}
+        {run && activeSection !== 'workspace' && activeSection !== 'overview' && <section aria-label={`${activeTitle} dashboard section`}><Dashboard run={run} activeSection={activeSection} onNavigate={navigateSection} /></section>}
       </main>
     </div>
 

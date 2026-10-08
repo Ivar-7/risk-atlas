@@ -9,11 +9,12 @@ import { ExposureMap } from './dashboard-4-utils/exposure-map'
 import { QuickActions } from './dashboard-4-utils/quick-actions'
 import { RefundReturnRateChart } from './dashboard-4-utils/refund-return-rate-chart'
 import { RevenueChart } from './dashboard-4-utils/revenue-chart'
+import { VulnerabilityChart } from './dashboard-4-utils/vulnerability-chart'
 import { DashboardStats } from './dashboard-4-utils/stats'
 import { downloadScenario, scenarioLabel, type Scenario } from './dashboard-4-utils/model'
 import { Panel, PanelHeading } from './dashboard-4-utils/panel'
 
-function UnderwritingSummary({ run, scenario, onNavigate }: { run: RunResult; scenario: Scenario; onNavigate: (id: DashboardSectionId) => void }) {
+function PortfolioSummary({ run, scenario, onNavigate }: { run: RunResult; scenario: Scenario; onNavigate: (id: DashboardSectionId) => void }) {
   const leadingClasses = run.by_housing_class.map((item) => ({
     ...item,
     loss: run.locations.filter((location) => location.housing_class === item.housing_class)
@@ -27,15 +28,18 @@ function UnderwritingSummary({ run, scenario, onNavigate }: { run: RunResult; sc
   const runTime = new Intl.DateTimeFormat('en-KE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Nairobi' }).format(new Date(run.created_at))
 
   return <div className="space-y-5">
-    <section className="overflow-hidden rounded-xl border border-brand-navy/15 bg-brand-navy p-6 text-white shadow-dashboard sm:p-8" aria-label="Underwriting readout">
+    <section className="overflow-hidden rounded-xl border border-brand-navy/15 bg-brand-navy p-6 text-white shadow-dashboard sm:p-8" aria-label="Portfolio readout">
       <div className="flex flex-wrap items-start justify-between gap-5">
-        <div className="max-w-3xl"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">Underwriting readout · illustrative</p><h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Portfolio loss at a glance</h2><p className="mt-3 text-sm leading-6 text-white/75">Synthetic Nairobi exposure under a proxy flood model. Use the figures to review concentration and assumptions; the run does not establish a price or acceptance decision.</p><p className="mt-3 text-xs text-white/60">Run {run.run_id.slice(0, 8)} · {runTime} EAT</p></div>
+        <div className="max-w-3xl"><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">Portfolio readout · illustrative</p><h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Portfolio loss at a glance</h2><p className="mt-3 text-sm leading-6 text-white/75">Synthetic Nairobi exposure under a proxy flood model. Use the figures to review concentration and assumptions; the run does not establish a price or acceptance decision.</p><p className="mt-3 text-xs text-white/60">Run {run.run_id.slice(0, 8)} · {runTime} EAT</p></div>
         <button type="button" onClick={() => downloadScenario(run, scenario)} className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"><Download size={15} /> Export selected scenario</button>
       </div>
       <div className="mt-7 grid gap-5 border-t border-white/20 pt-6 sm:grid-cols-3">
         <div><p className="text-xs text-white/65">Gross insured AAL</p><p className="mt-2 text-2xl font-semibold tabular-nums">{money(run.metrics.aal_kes)}</p><p className="mt-1 text-xs text-white/60">From assumed event frequencies</p></div>
+        <div><p className="text-xs text-white/65">Net retained AAL</p><p className="mt-2 text-2xl font-semibold tabular-nums">{money(run.metrics.net_aal_kes)}</p><p className="mt-1 text-xs text-white/60">After assumed reinsurance</p></div>
         <div><p className="text-xs text-white/65">1-in-100 gross loss</p><p className="mt-2 text-2xl font-semibold tabular-nums">{money(run.metrics.loss_1_in_100_kes)}</p><p className="mt-1 text-xs text-white/60">After assumed property terms</p></div>
+        <div><p className="text-xs text-white/65">1-in-100 net loss</p><p className="mt-2 text-2xl font-semibold tabular-nums">{money(run.metrics.net_loss_1_in_100_kes)}</p><p className="mt-1 text-xs text-white/60">After quota share and cat XOL</p></div>
         <div><p className="text-xs text-white/65">1-in-250 gross loss</p><p className="mt-2 text-2xl font-semibold tabular-nums">{money(run.metrics.loss_1_in_250_kes)}</p><p className="mt-1 text-xs text-white/60">Rarest assigned scenario</p></div>
+        <div><p className="text-xs text-white/65">1-in-250 net loss</p><p className="mt-2 text-2xl font-semibold tabular-nums">{money(run.metrics.net_loss_1_in_250_kes)}</p><p className="mt-1 text-xs text-white/60">Rarest assigned scenario</p></div>
       </div>
     </section>
 
@@ -43,10 +47,14 @@ function UnderwritingSummary({ run, scenario, onNavigate }: { run: RunResult; sc
 
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)]">
       <RevenueChart run={run} scenario={scenario} compact />
-      <Panel className="p-5 sm:p-6"><PanelHeading eyebrow="Selected scenario" title={`${scenarioLabel(scenario)} financial view`} description="The gross insured amount follows the assumed per-building deductible and limit." />
+      <Panel className="p-5 sm:p-6"><PanelHeading eyebrow="Selected scenario" title={`${scenarioLabel(scenario)} financial waterfall`} description="Property terms determine gross loss; portfolio treaty terms determine net retained loss." />
         <dl className="mt-5 divide-y divide-border/70 text-sm">
           <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Ground-up damage</dt><dd className="font-semibold tabular-nums">{money(scenario.ground_up_loss_kes)}</dd></div>
           <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Gross insured loss</dt><dd className="font-semibold tabular-nums text-accent">{money(scenario.loss_kes)}</dd></div>
+          <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Quota share recovery</dt><dd className="font-semibold tabular-nums">−{money(scenario.quota_share_recovery_kes)}</dd></div>
+          <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Retained before cat XOL</dt><dd className="font-semibold tabular-nums">{money(scenario.retained_before_cat_kes)}</dd></div>
+          <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Cat XOL recovery</dt><dd className="font-semibold tabular-nums">−{money(scenario.cat_xol_recovery_kes)}</dd></div>
+          <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Net retained loss</dt><dd className="font-semibold tabular-nums text-success">{money(scenario.net_loss_kes)}</dd></div>
           <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Affected insured value</dt><dd className="font-semibold tabular-nums">{money(scenario.affected_tiv_kes)}</dd></div>
           <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Loss / affected value</dt><dd className="font-semibold tabular-nums">{scenario.affected_tiv_kes > 0 ? pct(scenario.loss_kes / scenario.affected_tiv_kes, 1) : '0%'}</dd></div>
           <div className="flex justify-between gap-4 py-3"><dt className="text-text-muted">Annual exceedance</dt><dd className="font-semibold tabular-nums">{pct(scenario.annual_exceedance, 1)} assumed</dd></div>
@@ -54,6 +62,8 @@ function UnderwritingSummary({ run, scenario, onNavigate }: { run: RunResult; sc
         <button type="button" onClick={() => onNavigate('loss-curve')} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-accent hover:underline">Full scenario table <ArrowRight size={14} /></button>
       </Panel>
     </div>
+
+    <VulnerabilityChart matrix={run.vulnerability_matrix} scenarios={run.scenarios} />
 
     <div className="grid gap-5 lg:grid-cols-2">
       <Panel className="p-5 sm:p-6"><PanelHeading eyebrow="Concentration" title="Where loss sits" description={`Largest contributors to ${scenarioLabel(scenario)} gross loss and annual average loss.`} />
@@ -66,9 +76,9 @@ function UnderwritingSummary({ run, scenario, onNavigate }: { run: RunResult; sc
       <Panel className="p-5 sm:p-6"><PanelHeading eyebrow="Review before use" title="Terms, data and model checks" description="Items an underwriter should resolve before relying on this run." />
         <ul className="mt-5 space-y-3 text-sm leading-5">
           <li className="flex gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-accent" /><span><strong>Exposure:</strong> {run.metrics.locations.toLocaleString('en-KE')} sample locations; {run.metrics.synthetic_locations.toLocaleString('en-KE')} synthetic. Confirm actual schedule, sums insured and coordinates.</span></li>
-          <li className="flex gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-accent" /><span><strong>Coverage:</strong> {run.controls.deductible_pct}% TIV deductible and {run.controls.policy_limit_pct}% TIV limit are uniform assumptions. Confirm wording and property terms. No portfolio reinsurance recovery is modelled.</span></li>
+          <li className="flex gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-accent" /><span><strong>Coverage and treaty:</strong> {run.controls.deductible_pct}% TIV deductible, {run.controls.policy_limit_pct}% TIV limit, {run.controls.quota_share_ceded_pct}% quota share and {run.controls.cat_xol_applies ? 'a cat XOL layer' : 'no cat XOL layer'} are assumptions. Confirm policy wording and treaty terms.</span></li>
           <li className="flex gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-accent" /><span><strong>Hazard:</strong> proxy detected {run.hazard_validation.detected_common}/{run.hazard_validation.checked} geocoded named hotspot centres; {missedHotspots} were missed. Check local flood evidence and drainage.</span></li>
-          <li className="flex gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-accent" /><span><strong>Frequency:</strong> return periods and depth conversion are assumed, so AAL and the curve are illustrative.</span></li>
+          <li className="flex gap-3"><ShieldAlert size={17} className="mt-0.5 shrink-0 text-accent" /><span><strong>Frequency and damage:</strong> return periods and fixed class-by-tier damage ratios are assumed, so AAL and the curve are illustrative.</span></li>
         </ul>
         <p className="mt-5 rounded-lg bg-surface-alt p-3 text-xs leading-5 text-text-muted">Drainage sensitivity {run.controls.apply_drainage_correction ? 'is included' : 'is shown as a comparison'} in this run; its 1-in-100 gross uplift is {money(run.metrics.drainage_delta_1_in_100_kes)}. It is unvalidated.</p>
         <button type="button" onClick={() => onNavigate('assumptions')} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-accent hover:underline">Review model assumptions <ArrowRight size={14} /></button>
@@ -97,7 +107,7 @@ export function Dashboard({ run, activeSection, onNavigate }: { run: RunResult; 
       </label>
     </div>
 
-    {activeSection === 'overview' && <UnderwritingSummary run={run} scenario={scenario} onNavigate={onNavigate} />}
+    {activeSection === 'portfolio' && <PortfolioSummary run={run} scenario={scenario} onNavigate={onNavigate} />}
     {activeSection === 'loss-curve' && <RevenueChart run={run} scenario={scenario} />}
     {activeSection === 'hazard-proxy' && <RefundReturnRateChart run={run} scenario={scenario} />}
     {activeSection === 'exposure-map' && <ExposureMap run={run} scenario={scenario} />}

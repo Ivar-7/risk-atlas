@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createRun, previewExposure } from './api'
-import type { ExposurePreview, RunResult } from './types'
+import { createRun, previewCoordinates, previewExposure } from './api'
+import type { CoordinatePreview, ExposurePreview, RunResult } from './types'
 import { clsLabel, money } from './format'
 
 const exampleOffer = 'Synthetic residential offer for a Nairobi flood CAT demonstration. The schedule contains 25 informal iron-sheet houses in Kibera. Each building has an insured value of KES 800,000.'
@@ -10,7 +10,14 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
   const [applyDrainage, setApplyDrainage] = useState(false)
   const [deductiblePct, setDeductiblePct] = useState('0')
   const [policyLimitPct, setPolicyLimitPct] = useState('100')
+  const [quotaSharePct, setQuotaSharePct] = useState('0')
+  const [catXolApplies, setCatXolApplies] = useState(false)
+  const [catAttachmentKes, setCatAttachmentKes] = useState('')
+  const [catLimitKes, setCatLimitKes] = useState('')
   const [preview, setPreview] = useState<ExposurePreview | null>(null)
+  const [coordinateFile, setCoordinateFile] = useState<File | null>(null)
+  const [coordinatePreview, setCoordinatePreview] = useState<CoordinatePreview | null>(null)
+  const [coordinatesApproved, setCoordinatesApproved] = useState(false)
   const [approved, setApproved] = useState(false)
   const [busy, setBusy] = useState<'preview' | 'run' | null>(null)
   const [error, setError] = useState('')
@@ -19,6 +26,9 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
     setFreeText(value)
     setPreview(null)
     setApproved(false)
+    setCoordinateFile(null)
+    setCoordinatePreview(null)
+    setCoordinatesApproved(false)
     setError('')
   }
 
@@ -27,10 +37,27 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
     setError('')
     setPreview(null)
     setApproved(false)
+    setCoordinatePreview(null)
+    setCoordinatesApproved(false)
     try {
       setPreview(await previewExposure(freeText))
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not preview exposure')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function reviewCoordinates() {
+    if (!coordinateFile || !preview) return
+    setBusy('preview')
+    setError('')
+    setCoordinatePreview(null)
+    setCoordinatesApproved(false)
+    try {
+      setCoordinatePreview(await previewCoordinates(coordinateFile, preview.preview_id))
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not preview coordinate schedule')
     } finally {
       setBusy(null)
     }
@@ -44,13 +71,22 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
         apply_drainage_correction: applyDrainage,
         deductible_pct: Number(deductiblePct),
         policy_limit_pct: Number(policyLimitPct),
+        quota_share_ceded_pct: Number(quotaSharePct),
+        cat_xol_applies: catXolApplies,
+        cat_xol_attachment_kes: catXolApplies ? Number(catAttachmentKes) : null,
+        cat_xol_limit_kes: catXolApplies ? Number(catLimitKes) : null,
         free_text: freeText.trim() ? freeText : '',
         preview_id: freeText.trim() ? preview?.preview_id : undefined,
         exposure_reviewed: Boolean(freeText.trim() && approved),
+        coordinate_preview_id: coordinatePreview?.coordinate_preview_id,
+        coordinates_reviewed: Boolean(coordinatePreview && coordinatesApproved),
       })
       onRun(result)
       setPreview(null)
       setApproved(false)
+      setCoordinateFile(null)
+      setCoordinatePreview(null)
+      setCoordinatesApproved(false)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not run the model')
     } finally {
@@ -60,7 +96,8 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
 
   const hasText = freeText.trim().length > 0
   const reviewable = Boolean(preview && preview.groups.length > 0 && !preview.notes.some((note) => note.startsWith('Skipped')))
-  const validTerms = [deductiblePct, policyLimitPct].every((value) => value.trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 100)
+  const validTerms = [deductiblePct, policyLimitPct, quotaSharePct].every((value) => value.trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 100)
+    && (!catXolApplies || [catAttachmentKes, catLimitKes].every((value) => value.trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0))
 
   return <section className="rounded-xl border border-border bg-surface p-5 text-text shadow-dashboard sm:p-6" aria-label="Flood CAT model controls">
     <div>
@@ -92,6 +129,19 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
       </div>
     </fieldset>
 
+    <fieldset className="mt-5 rounded-lg border border-border p-4">
+      <legend className="px-1 text-sm font-semibold">Assumed portfolio reinsurance</legend>
+      <p className="mb-4 text-xs leading-5 text-text-muted">After property deductibles and limits, quota share cedes a percentage of total gross loss. An optional catastrophe layer then recovers from the retained portfolio event loss, once per scenario.</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="text-xs font-medium">Quota share ceded · % of gross<input type="number" min="0" max="100" step="0.1" value={quotaSharePct} onChange={(event) => setQuotaSharePct(event.target.value)} disabled={busy !== null} className="mt-2 w-full rounded-lg border border-input-border bg-surface p-3 text-sm outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent" /></label>
+      </div>
+      <label className="mt-4 flex items-center gap-2 text-xs font-medium"><input type="checkbox" checked={catXolApplies} onChange={(event) => setCatXolApplies(event.target.checked)} disabled={busy !== null} className="accent-accent" />Apply catastrophe excess of loss to retained event loss</label>
+      {catXolApplies && <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="text-xs font-medium">Cat XOL attachment · KES<input type="number" min="0" step="1" value={catAttachmentKes} onChange={(event) => setCatAttachmentKes(event.target.value)} disabled={busy !== null} className="mt-2 w-full rounded-lg border border-input-border bg-surface p-3 text-sm outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent" /></label>
+        <label className="text-xs font-medium">Cat XOL layer limit · KES<input type="number" min="0" step="1" value={catLimitKes} onChange={(event) => setCatLimitKes(event.target.value)} disabled={busy !== null} className="mt-2 w-full rounded-lg border border-input-border bg-surface p-3 text-sm outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent" /></label>
+      </div>}
+    </fieldset>
+
     {hasText && <button type="button" onClick={() => void review()} disabled={busy !== null} className="mt-4 rounded-lg border border-accent px-4 py-2 text-sm font-semibold text-accent hover:bg-danger-tint disabled:opacity-50">
       {busy === 'preview' ? 'Extracting…' : preview ? 'Preview again' : 'Preview exposure'}
     </button>}
@@ -104,11 +154,12 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
       {preview.notes.map((note, index) => <p key={`${index}-${note}`} className="mt-2 text-xs text-text-muted">{note}</p>)}
       {reviewable && <label className="mt-4 flex items-start gap-2 text-xs"><input type="checkbox" checked={approved} onChange={(event) => setApproved(event.target.checked)} disabled={busy !== null} className="mt-0.5 accent-accent" /><span>I checked the count, construction, place and insured value. Add these synthetic buildings to the run.</span></label>}
       {!reviewable && <p className="mt-3 text-xs text-danger">Complete the exposure description and preview it again before running.</p>}
+      {reviewable && <div className="mt-5 border-t border-border pt-4"><p className="text-xs font-semibold">Optional building coordinate schedule</p><p className="mt-1 text-xs leading-5 text-text-muted">Upload one CSV row per extracted building with loc_id, place, housing_class, tiv_kes, lat, lon and coordinate_source. The rows must match the reviewed groups. The API checks raster coverage and values; it cannot independently verify an address. <a href="/coordinate_schedule_template.csv" download className="font-semibold text-accent underline">Download the CSV template</a>.</p><input type="file" accept=".csv,text/csv" aria-label="Building coordinate schedule CSV" onChange={(event) => { setCoordinateFile(event.target.files?.[0] ?? null); setCoordinatePreview(null); setCoordinatesApproved(false) }} disabled={busy !== null} className="mt-3 block w-full text-xs text-text-muted file:mr-3 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-text" />{coordinateFile && <button type="button" onClick={() => void reviewCoordinates()} disabled={busy !== null} className="mt-3 rounded-lg border border-accent px-3 py-1.5 text-xs font-semibold text-accent hover:bg-danger-tint disabled:opacity-50">{busy === 'preview' ? 'Checking…' : 'Check coordinate schedule'}</button>}{coordinatePreview && <div className="mt-3 rounded-lg border border-border bg-surface p-3 text-xs"><p className="font-semibold">{coordinatePreview.rows_count} coordinates matched · {coordinatePreview.filename}</p><p className="mt-1 text-text-muted">{coordinatePreview.status}</p><div className="mt-2 max-h-28 overflow-y-auto text-text-muted">{coordinatePreview.rows.slice(0, 5).map((row) => <p key={row.loc_id}>{row.loc_id} · {row.lat.toFixed(5)}, {row.lon.toFixed(5)} · {row.coordinate_source}</p>)}{coordinatePreview.rows_count > 5 && <p>…and {coordinatePreview.rows_count - 5} more rows</p>}</div><label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={coordinatesApproved} onChange={(event) => setCoordinatesApproved(event.target.checked)} disabled={busy !== null} className="mt-0.5 accent-accent" /><span>I checked these coordinates against the source schedule and want the model to use these points.</span></label></div>}</div>}
     </div>}
 
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={applyDrainage} onChange={(event) => setApplyDrainage(event.target.checked)} disabled={busy !== null} className="accent-accent" />Include unvalidated drainage sensitivity in this run</label>
-      <button type="button" onClick={() => void runModel()} disabled={busy !== null || !validTerms || (hasText && (!reviewable || !approved))} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">{busy === 'run' ? 'Running model…' : 'Run flood model'}</button>
+      <button type="button" onClick={() => void runModel()} disabled={busy !== null || !validTerms || (hasText && (!reviewable || !approved || Boolean(coordinateFile && (!coordinatePreview || !coordinatesApproved))))} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">{busy === 'run' ? 'Running model…' : 'Run flood model'}</button>
     </div>
     {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
   </section>

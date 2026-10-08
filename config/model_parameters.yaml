@@ -1,6 +1,6 @@
 model:
   name: Nairobi Urban Flood CAT
-  version: "1.1.0"
+  version: "1.3.0"
   peril: pluvial flood
   region: Nairobi, Kenya
   currency: KES
@@ -12,6 +12,8 @@ defaults:
   random_seed: 42
   deductible_pct: 0.0
   policy_limit_pct: 100.0
+  quota_share_ceded_pct: 0.0
+  cat_xol_applies: false
 
 # ASSUMPTION — the five rasters have no return-period years attached (problem statement Step 4).
 # Wider masks produce larger losses. Map them to rarer events so the assumed EP curve is monotone.
@@ -22,16 +24,18 @@ return_periods:
   severe: { years: 25, annual_exceedance: 0.04, meaning: "Narrow proxy mask, assumed 1-in-25 event" }
   extreme: { years: 10, annual_exceedance: 0.10, meaning: "Narrowest proxy mask, assumed most frequent event" }
 
-# ASSUMPTION — problem statement Step 1 example: treat score 1 as 4 m, depth = score × 4 m.
-# This is not measured flood depth.
+# The supplied 0–1 score determines whether a building is inside each tier's
+# proxy footprint. Positive scores use the class × tier matrix below; zero uses 0.
+# Score magnitude is not interpreted as measured depth or interpolated damage.
 hazard:
-  max_depth_m: 4.0
   score_meaning: "0–1 relative pluvial susceptibility from the starter-kit proxy, not water depth"
 
-# SOURCE — Huizinga et al. (2017), Table 3-1, printed p. 12 (PDF p. 16):
-# Africa residential depth (m) / damage factor. Linear interpolation is a model choice.
-# ASSUMPTION — class depth multipliers and caps adapt this continental curve to the
-# synthetic Nairobi housing classes; they are not JRC data or Kenya claims estimates.
+# SOURCE REFERENCE — Huizinga et al. (2017), Table 3-1, printed p. 12 (PDF p. 16).
+# ASSUMPTION — the fixed ratios below are illustrative categorical adaptations,
+# not values published by JRC or calibrated Kenya claims curves. The source tier
+# names follow the starter files; the values increase with this model's assumed
+# event order (extreme 10y -> common 250y), which reverses the ordinary reading
+# of those names because the common mask is widest.
 vulnerability:
   source: "Huizinga, de Moel & Szewczyk (2017), Global flood depth-damage functions, EUR 28552 EN, Table 3-1, p. 12"
   source_url: "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC105688/global_flood_depth-damage_functions__10042017.pdf#page=16"
@@ -47,21 +51,17 @@ vulnerability:
     - { depth_m: 6.0, damage_factor: 1.0 }
   classes:
     informal_iron_sheet:
-      depth_multiplier: 1.45
-      cap: 0.95
-      differs_from_jrc: "Assumed 1.45× effective depth and 95% cap for iron-sheet construction; not sourced from JRC."
+      tier_damage_ratios: { extreme: 0.08, severe: 0.25, moderate: 0.55, occasional: 0.75, common: 0.85 }
+      differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 85% ceiling is assumed, not a JRC iron-sheet curve."
     semi_permanent:
-      depth_multiplier: 1.10
-      cap: 0.90
-      differs_from_jrc: "Assumed 1.10× effective depth and 90% cap for mixed masonry/timber; not sourced from JRC."
+      tier_damage_ratios: { extreme: 0.04, severe: 0.16, moderate: 0.38, occasional: 0.56, common: 0.69 }
+      differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 69% ceiling is assumed, not a JRC semi-permanent curve."
     permanent_masonry:
-      depth_multiplier: 0.85
-      cap: 0.85
-      differs_from_jrc: "Assumed 0.85× effective depth and 85% cap for permanent masonry; not sourced from JRC."
+      tier_damage_ratios: { extreme: 0.02, severe: 0.10, moderate: 0.24, occasional: 0.37, common: 0.52 }
+      differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 52% ceiling is assumed, not a JRC masonry curve."
     concrete_rcc:
-      depth_multiplier: 0.55
-      cap: 0.70
-      differs_from_jrc: "Assumed 0.55× effective depth and 70% cap for RCC; no Kenya RCC claims curve was used."
+      tier_damage_ratios: { extreme: 0.01, severe: 0.04, moderate: 0.12, occasional: 0.21, common: 0.31 }
+      differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 31% ceiling is assumed, not a JRC RCC curve."
 
 # Unvalidated drainage sensitivity — uses the brief's stated proxy limitation
 # (misses Kibera, Westlands, Lavington and other drainage-driven floods).

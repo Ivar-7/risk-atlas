@@ -57,7 +57,7 @@ class ModelIntegrityTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     load_portfolio()
         with self.assertRaisesRegex(ValueError, 'Unsupported housing_class'):
-            damage_ratio(np.array([1.0]), np.array(['unsupported_class']))
+            damage_ratio('common', np.array([1.0]), np.array(['unsupported_class']))
 
     def test_points_just_outside_raster_are_not_treated_as_covered(self):
         _, west, north, width, height = _raster('common')
@@ -120,12 +120,32 @@ class ModelIntegrityTests(unittest.TestCase):
             self.assertAlmostEqual(row['policy_limit_kes'], row['tiv_kes'] * 0.60)
         default = run_model(ingested=self.data)
         self.assertTrue(all(abs(s['loss_kes'] - s['ground_up_loss_kes']) < 0.01 for s in default['scenarios']))
+        self.assertTrue(all(abs(s['net_loss_kes'] - s['loss_kes']) < 0.01 for s in default['scenarios']))
+
+    def test_portfolio_net_curve_reconciles_with_treaty_recoveries(self):
+        result = run_model({
+            'quota_share_ceded_pct': 25, 'cat_xol_applies': True,
+            'cat_xol_attachment_kes': 100_000_000, 'cat_xol_limit_kes': 200_000_000,
+        }, ingested=self.data)
+        self.assertEqual(result['controls']['quota_share_ceded_pct'], 25)
+        self.assertTrue(result['controls']['cat_xol_applies'])
+        for scenario, curve in zip(result['scenarios'], result['ep_curve']):
+            self.assertAlmostEqual(scenario['quota_share_recovery_kes'], scenario['loss_kes'] * 0.25, delta=0.001)
+            self.assertAlmostEqual(scenario['net_loss_kes'], scenario['loss_kes'] - scenario['quota_share_recovery_kes'] - scenario['cat_xol_recovery_kes'], delta=0.001)
+            self.assertAlmostEqual(curve['net_loss_kes'], scenario['net_loss_kes'], delta=0.001)
+        self.assertGreater(result['scenarios'][-1]['cat_xol_recovery_kes'], 0)
+        self.assertLess(result['metrics']['net_aal_kes'], result['metrics']['aal_kes'])
+        self.assertAlmostEqual(result['metrics']['net_loss_1_in_100_kes'], next(s['net_loss_kes'] for s in result['scenarios'] if s['return_period_years'] == 100))
 
     def test_invalid_policy_terms_are_rejected(self):
         with self.assertRaises(ValidationError):
             RunRequest(deductible_pct=-1)
         with self.assertRaises(ValidationError):
             RunRequest(policy_limit_pct=101)
+        with self.assertRaises(ValidationError):
+            RunRequest(quota_share_ceded_pct=101)
+        with self.assertRaises(ValidationError):
+            RunRequest(cat_xol_applies=True, cat_xol_attachment_kes=10)
         with self.assertRaisesRegex(ValueError, 'Policy percentages'):
             run_model({'deductible_pct': float('nan')}, ingested=self.data)
 

@@ -5,7 +5,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import { FileText, MapPin } from 'lucide-react'
 import LiquidWaveSpinner from '@/components/ui/spinner-10'
 import DocumentReview from '../features/model/DocumentReview'
-import { calculateDocumentLoss, type DocumentAssessment, type LossCalculation, type LossTerms } from '../features/model/api'
+import { calculateDocumentLoss, type DocumentAssessment, type LossCalculation, type LossTerms, type PropertyCalculation } from '../features/model/api'
 import { money } from '../features/model/format'
 import { chartTheme } from '../lib/chartTheme'
 
@@ -64,19 +64,23 @@ function NumericInput({ label, value, onChange, hint, source, readOnly = false }
   </label>
 }
 
-export default function ModelWorkspace({ assessment, onReviewed }: { assessment: DocumentAssessment | null; onReviewed: (assessment: DocumentAssessment) => void }) {
-  const [terms, setTerms] = useState<LossTerms>(emptyTerms)
-  const [result, setResult] = useState<LossCalculation | null>(null)
+export default function ModelWorkspace({ assessment, calculation, onReviewed, onCalculated, onInvalidated }: { assessment: DocumentAssessment | null; calculation: PropertyCalculation | null; onReviewed: (assessment: DocumentAssessment) => void; onCalculated: (calculation: PropertyCalculation) => void; onInvalidated: () => void }) {
+  const [terms, setTerms] = useState<LossTerms>(() => calculation?.terms ?? (assessment ? initialTerms(assessment) : emptyTerms))
+  const [result, setResult] = useState<LossCalculation | null>(() => calculation?.result ?? null)
   const [confirmed, setConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
-  const [selectedTier, setSelectedTier] = useState('occasional')
-  useEffect(() => { setSelectedTier('occasional'); setTerms(assessment ? initialTerms(assessment) : emptyTerms); setResult(null); setConfirmed(false); setError('') }, [assessment])
-  const update = (patch: Partial<LossTerms>) => { setTerms((current) => ({ ...current, ...patch })); setResult(null); setConfirmed(false) }
+  const [selectedTier, setSelectedTier] = useState(calculation?.tier ?? 'occasional')
+  const reviewDocument = (next: DocumentAssessment) => { setSelectedTier('occasional'); setTerms(initialTerms(next)); setResult(null); setConfirmed(false); setError(''); onInvalidated(); onReviewed(next) }
+  const update = (patch: Partial<LossTerms>) => { setTerms((current) => ({ ...current, ...patch })); setResult(null); setConfirmed(false); onInvalidated() }
   async function calculate() {
     setBusy(true); setError('')
-    try { setResult(await calculateDocumentLoss(terms)) }
+    try {
+      const calculated = await calculateDocumentLoss(terms)
+      setResult(calculated)
+      if (assessment) onCalculated({ assessment, terms: { ...terms }, tier: selectedTier, result: calculated })
+    }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not calculate loss') }
     finally { setBusy(false) }
   }
@@ -91,6 +95,7 @@ export default function ModelWorkspace({ assessment, onReviewed }: { assessment:
     setTerms((current) => ({ ...current, ground_up_loss_kes: String(loss ?? ''), deductible_kes: deductibleFromDocument(fields?.flood_deductible?.value, loss) || current.deductible_kes }))
     setResult(null)
     setConfirmed(false)
+    onInvalidated()
   }
   const complete = terms.ground_up_loss_kes !== '' && terms.deductible_kes !== '' && terms.policy_limit_kes !== '' && terms.quota_share_ceded_pct !== '' && (!terms.cat_xol_applies || (terms.cat_xol_attachment_kes !== null && terms.cat_xol_limit_kes !== null && terms.cat_xol_attachment_kes !== '' && terms.cat_xol_limit_kes !== ''))
   const graph = result ? [
@@ -116,7 +121,7 @@ export default function ModelWorkspace({ assessment, onReviewed }: { assessment:
 
   return <div className="space-y-5 p-4 text-text sm:p-6">
     <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-accent">Model workspace</p><h2 className="mt-1 text-xl font-semibold">Document and loss model</h2></div>
-    <DocumentReview onReviewed={onReviewed} onAnalyzing={setAnalyzing} />
+    <DocumentReview onReviewed={reviewDocument} onAnalyzing={setAnalyzing} />
     {analyzing ? <LiquidWaveSpinner size="lg" className="mx-auto py-4" /> : !assessment ? <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Upload a property document to locate the risk. When it states a construction type and insured value within the hazard layer, the model calculates illustrative losses across five scenarios.</p> : <>
       <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
         <p className="text-base font-semibold leading-6 text-text">{fields?.insured?.value || assessment.filename}</p>

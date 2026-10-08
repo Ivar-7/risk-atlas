@@ -97,8 +97,7 @@ def _modelled_financial_scenarios(fields: dict, evidence: dict | None) -> dict |
     scenarios = []
     for tier, spec in sorted(params['return_periods'].items(), key=lambda item: item[1]['years']):
         score = float(evidence['tiers'][tier])
-        depth = score * float(params['hazard']['max_depth_m'])
-        ratio = float(damage_ratio(np.array([depth]), np.array([klass]), params)[0])
+        ratio = float(damage_ratio(tier, np.array([score]), np.array([klass]), params)[0])
         scenarios.append({
             'tier': tier,
             'return_period_years': spec['years'],
@@ -110,7 +109,7 @@ def _modelled_financial_scenarios(fields: dict, evidence: dict | None) -> dict |
     return {
         'tiv_kes': tiv,
         'housing_class': klass,
-        'basis': 'Point proxy score × assumed maximum depth, then the adapted JRC Africa residential vulnerability function × document-stated TIV.',
+        'basis': 'Positive point proxy score selects the fixed damage ratio for its source tier and construction class; ratio × document-stated TIV gives physical loss.',
         'construction_warning': 'The vulnerability curve is adapted from residential reference data. Verify that it applies to this property; this is not a calibrated claims estimate.',
         'scenarios': scenarios,
     }

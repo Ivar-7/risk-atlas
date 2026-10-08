@@ -11,11 +11,18 @@ export function AiEvidence({ run }: { run: RunResult }) {
   const comparisonRows: Array<{ label: string; before: number; after: number; format: (value: number) => string }> = comparison ? [
     { label: 'Locations', before: comparison.without_added.locations, after: comparison.with_added.locations, format: (value) => value.toLocaleString() },
     { label: 'TIV', before: comparison.without_added.total_tiv_kes, after: comparison.with_added.total_tiv_kes, format: money },
-    { label: 'AAL', before: comparison.without_added.aal_kes, after: comparison.with_added.aal_kes, format: money },
+    { label: 'Gross AAL', before: comparison.without_added.aal_kes, after: comparison.with_added.aal_kes, format: money },
+    { label: 'Net AAL', before: comparison.without_added.net_aal_kes, after: comparison.with_added.net_aal_kes, format: money },
     ...run.scenarios.map((scenario) => ({
-      label: `1-in-${scenario.return_period_years} loss`,
+      label: `1-in-${scenario.return_period_years} gross loss`,
       before: comparison.without_added.scenarios[scenario.tier],
       after: comparison.with_added.scenarios[scenario.tier],
+      format: money,
+    })),
+    ...run.scenarios.map((scenario) => ({
+      label: `1-in-${scenario.return_period_years} net loss`,
+      before: comparison.without_added.net_scenarios[scenario.tier],
+      after: comparison.with_added.net_scenarios[scenario.tier],
       format: money,
     })),
   ] : []

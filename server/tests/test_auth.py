@@ -103,6 +103,29 @@ class AuthTests(unittest.TestCase):
             response = client.get(f'/api/runs/{run_id}', headers={'Authorization': f'Bearer {other_token}'})
             self.assertEqual(response.status_code, 404)
 
+    def test_refresh_preserves_reviewed_exposure_and_account_scope(self):
+        old = {
+            'run_id': 'old-run', 'owner_id': 'user_a', 'created_at': '2026-10-08T00:00:00+00:00',
+            'controls': {'free_text': '25 informal houses in Kibera', 'deductible_pct': 5, 'policy_limit_pct': 80},
+            'exposure_review': {'reviewed': True, 'source': 'rules', 'groups': [
+                {'count': 25, 'housing_class': 'informal_iron_sheet', 'place': 'Kibera', 'tiv_each_kes': 800000},
+            ]},
+        }
+        captured = {}
+        def model(payload, ingested):
+            captured.update(payload)
+            return {'run_id': 'new-run', 'created_at': '2026-10-08T01:00:00+00:00'}
+        with patch.object(main, 'STORE', {'old-run': old}), patch.object(main, 'run_model', side_effect=model), patch.object(main, 'save_run'), patch.object(main, 'append_run', return_value={}):
+            with self.assertRaises(HTTPException) as caught:
+                main.refresh_run('old-run', claims={'sub': 'user_b'})
+            self.assertEqual(caught.exception.status_code, 404)
+            refreshed = main.refresh_run('old-run', claims={'sub': 'user_a'})
+            self.assertEqual(refreshed['refreshed_from_run_id'], 'old-run')
+            self.assertEqual(main.STORE['new-run']['owner_id'], 'user_a')
+            self.assertEqual(captured['exposure_groups'], old['exposure_review']['groups'])
+            self.assertEqual(captured['deductible_pct'], 5)
+            self.assertEqual(captured['policy_limit_pct'], 80)
+
 
 if __name__ == '__main__':
     unittest.main()

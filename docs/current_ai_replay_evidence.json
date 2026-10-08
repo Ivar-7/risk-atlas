@@ -1,0 +1,82 @@
+{
+  "kind": "current model replay of previously reviewed live AI extraction; no new AI call",
+  "run_id": "5f78163e-7931-4e79-afe9-b50046495ffb",
+  "created_at_utc": "2026-10-08T19:56:33.108268+00:00",
+  "model_version": "1.3.0",
+  "refreshed_from_run_id": "4bc52029-9ba8-44cc-9507-e3fac6cfda45",
+  "reviewed_extraction": {
+    "source": "openai",
+    "model": "gpt-6-luna",
+    "response_id": "resp_08124c47899367b4006ac7eae5884487d287524e1d35f3a0d5",
+    "reviewed_at": "2026-10-08T19:11:43.603815+00:00",
+    "groups": [
+      {
+        "count": 25,
+        "place": "Kibera",
+        "tiv_each_kes": 800000,
+        "housing_class": "informal_iron_sheet",
+        "total_tiv_kes": 20000000
+      }
+    ],
+    "input_text": "Synthetic residential offer for a Nairobi flood CAT demonstration. The schedule contains 25 informal iron-sheet houses in Kibera. Each building has an insured value of KES 800,000.",
+    "reviewed": true
+  },
+  "controls": {
+    "deductible_pct": 0.0,
+    "cat_xol_applies": false,
+    "exposure_source": "openai",
+    "policy_limit_pct": 100.0,
+    "cat_xol_limit_kes": null,
+    "quota_share_ceded_pct": 0.0,
+    "cat_xol_attachment_kes": null,
+    "apply_drainage_correction": false
+  },
+  "input_hashes": {
+    "exposure": "9a7b0d4f97f69897a1e595f92d606f78278eb097086acede5253d365184eb404",
+    "hotspots": "b597d843f80a800de82ed482f177f2acfc9339758276d57053eb593343dac7c3"
+  },
+  "comparison": {
+    "basis": "Same starter portfolio, drainage setting, hazard, vulnerability, property terms and portfolio treaty; only the reviewed synthetic rows differ.",
+    "with_added": {
+      "aal_kes": 16122402.65,
+      "locations": 625,
+      "scenarios": {
+        "common": 1075617150.0,
+        "severe": 26614200.0,
+        "extreme": 2443650.0,
+        "moderate": 172160200.0,
+        "occasional": 471644950.0
+      },
+      "net_aal_kes": 16122402.65,
+      "net_scenarios": {
+        "common": 1075617150.0,
+        "severe": 26614200.0,
+        "extreme": 2443650.0,
+        "moderate": 172160200.0,
+        "occasional": 471644950.0
+      },
+      "total_tiv_kes": 6383470000.0
+    },
+    "without_added": {
+      "aal_kes": 15934682.65,
+      "locations": 600,
+      "scenarios": {
+        "common": 1065417150.0,
+        "severe": 26214200.0,
+        "extreme": 2379650.0,
+        "moderate": 170400200.0,
+        "occasional": 466244950.0
+      },
+      "net_aal_kes": 15934682.65,
+      "net_scenarios": {
+        "common": 1065417150.0,
+        "severe": 26214200.0,
+        "extreme": 2379650.0,
+        "moderate": 170400200.0,
+        "occasional": 466244950.0
+      },
+      "total_tiv_kes": 6363470000.0
+    }
+  },
+  "source_model_version": "1.2.0"
+}

@@ -7,6 +7,7 @@ import type { RunResult } from '../../features/model/types'
 
 export const dashboardSections = [
   { id: 'overview', label: 'Underwriting summary', icon: LayoutDashboard },
+  { id: 'portfolio', label: 'Portfolio analysis', icon: Layers3 },
   { id: 'loss-curve', label: 'Scenario detail', icon: Activity },
   { id: 'hazard-proxy', label: 'Hazard proxy', icon: Waves },
   { id: 'exposure-map', label: 'Exposure map', icon: MapPinned },
@@ -89,6 +90,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch }: Props)
         <NavLink id="overview" activeId={activeId} onNavigate={navigate} />
       </div>
       <NavGroup title="Loss analysis">
+        <NavLink id="portfolio" activeId={activeId} onNavigate={navigate} />
         <NavLink id="loss-curve" activeId={activeId} onNavigate={navigate} badge={run?.scenarios.length} />
         <NavLink id="hazard-proxy" activeId={activeId} onNavigate={navigate} />
       </NavGroup>

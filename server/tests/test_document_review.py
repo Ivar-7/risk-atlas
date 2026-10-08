@@ -78,10 +78,10 @@ class DocumentReviewTests(unittest.TestCase):
         }
         evidence = {'proxy_covered': True, 'tiers': {tier: 0.5 for tier in ('common', 'occasional', 'moderate', 'severe', 'extreme')}}
         model = _modelled_financial_scenarios(fields, evidence)
-        expected_ratio = damage_ratio(np.array([2.0]), np.array(['concrete_rcc']), load_parameters())[0]
         self.assertEqual(model['tiv_kes'], 1_000_000)
         self.assertEqual([row['return_period_years'] for row in model['scenarios']], [10, 25, 50, 100, 250])
         for scenario in model['scenarios']:
+            expected_ratio = damage_ratio(scenario['tier'], np.array([0.5]), np.array(['concrete_rcc']), load_parameters())[0]
             self.assertAlmostEqual(scenario['damage_ratio'], expected_ratio)
             self.assertEqual(scenario['ground_up_loss_kes'], round(expected_ratio * 1_000_000, 2))
 

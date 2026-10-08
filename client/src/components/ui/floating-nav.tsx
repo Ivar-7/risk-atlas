@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { dashboardSections, type DashboardSectionId } from './dashboard-sidebar'
 
 const mobileSectionIds = ['workspace', 'overview', 'loss-curve', 'exposure-map'] as const satisfies readonly DashboardSectionId[]
-const moreSectionIds = ['hazard-proxy', 'construction', 'ai-evidence', 'assumptions'] as const satisfies readonly DashboardSectionId[]
+const moreSectionIds = ['portfolio', 'hazard-proxy', 'construction', 'ai-evidence', 'assumptions'] as const satisfies readonly DashboardSectionId[]
 
 type FloatingNavProps = {
   activeId: DashboardSectionId

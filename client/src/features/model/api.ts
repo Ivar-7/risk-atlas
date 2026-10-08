@@ -1,6 +1,6 @@
-import type { Controls, Explanation, ExposurePreview, RunResult } from './types'
+import type { Controls, CoordinatePreview, Explanation, ExposurePreview, RunResult } from './types'
 
-export const defaultControls: Controls = { apply_drainage_correction: false, free_text: '', deductible_pct: 0, policy_limit_pct: 100 }
+export const defaultControls: Controls = { apply_drainage_correction: false, free_text: '', deductible_pct: 0, policy_limit_pct: 100, quota_share_ceded_pct: 0, cat_xol_applies: false }
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ?? ''
 let tokenGetter: (() => Promise<string | null>) | null = null
 
@@ -26,10 +26,25 @@ async function json<T>(response: Response): Promise<T> {
 }
 
 export const fetchLatest = () => apiFetch('/api/runs/latest').then(json<RunResult>)
+const refreshes = new Map<string, Promise<RunResult>>()
+export function refreshSavedRun(runId: string): Promise<RunResult> {
+  const existing = refreshes.get(runId)
+  if (existing) return existing
+  const request = apiFetch(`/api/runs/${encodeURIComponent(runId)}/refresh`, { method: 'POST' }).then(json<RunResult>)
+  refreshes.set(runId, request)
+  void request.finally(() => refreshes.delete(runId)).catch(() => undefined)
+  return request
+}
 export const fetchCapabilities = () => apiFetch('/api/capabilities').then(json<{ ai_exposure_available: boolean }>)
 export const previewExposure = (free_text: string) => apiFetch('/api/exposure/preview', {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ free_text }),
 }).then(json<ExposurePreview>)
+export const previewCoordinates = (file: File, previewId: string) => {
+  const body = new FormData()
+  body.append('file', file)
+  body.append('preview_id', previewId)
+  return apiFetch('/api/exposure/coordinates/preview', { method: 'POST', body }).then(json<CoordinatePreview>)
+}
 export const createRun = (controls: Controls) => apiFetch('/api/runs', {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(controls),
 }).then(json<RunResult>)
@@ -89,6 +104,7 @@ export type LossCalculation = {
   net_loss_kes: string
   basis: string
 }
+export type PropertyCalculation = { assessment: DocumentAssessment; terms: LossTerms; tier: string; result: LossCalculation }
 export const calculateDocumentLoss = (terms: LossTerms) => apiFetch('/api/loss/calculate', {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(terms),
 }).then(json<LossCalculation>)

@@ -13,8 +13,8 @@ assumptions:
     statement: "0–1 susceptibility from terrain elevation, depressions, slope and OSM rivers. Not measured flood depth or a calibrated hydrological model. The kit states the proxy flags 12 of 24 hotspots."
   - id: HAZ-001
     provenance: ASSUMPTION
-    title: Score to depth
-    statement: "depth_m = susceptibility_score × 4.0 m, following the problem statement's worked example. Not observed water depth."
+    title: Proxy score to damage tier
+    statement: "For each source hazard tier, a positive 0–1 proxy score activates the fixed construction-class damage ratio for that tier; a zero score gives zero modelled damage. The score is not converted to metres or interpolated into damage."
   - id: HAZ-002
     provenance: ASSUMPTION
     title: Return periods on the five tiers
@@ -25,16 +25,20 @@ assumptions:
     statement: "Huizinga, de Moel & Szewczyk (2017), Global flood depth-damage functions, EUR 28552 EN, Table 3-1, printed p. 12 (PDF p. 16): 0 m → 0%, 0.5 m → 22%, 1 m → 38%, 1.5 m → 53%, 2 m → 64%, 3 m → 82%, 4 m → 90%, 5 m → 96%, 6 m → 100%. https://publications.jrc.ec.europa.eu/repository/bitstream/JRC105688/global_flood_depth-damage_functions__10042017.pdf#page=16"
   - id: VUL-002
     provenance: ASSUMPTION
-    title: Construction adaptations
-    statement: "Linear interpolation between the JRC table points, clamping outside 0–6 m, is a model choice. Informal, semi-permanent, masonry and RCC use assumed effective-depth multipliers and damage caps documented in model_parameters.yaml. These class adjustments are not JRC values or calibrated Kenya claims curves."
+    title: Five-tier construction damage matrix
+    statement: "Fixed percentages for informal, semi-permanent, masonry and RCC at extreme/severe/moderate/occasional/common source tiers are listed in model_parameters.yaml. They rise with this prototype's assumed event order and peak at 85%, 69%, 52% and 31% respectively. JRC Africa residential depth-damage values inform the shape, but these tier percentages are assumptions, not JRC class curves or calibrated Kenya claims estimates."
   - id: FIN-001
     provenance: METHOD
     title: Ground-up and insured loss
-    statement: "Ground-up loss = damage_ratio × tiv_kes. Gross insured loss per property = min(max(ground-up loss − deductible, 0), policy limit); portfolio loss sums property payouts. Treaty layers and net-of-reinsurance remain out of scope."
+    statement: "Ground-up loss = damage_ratio × tiv_kes. Gross insured loss per property = min(max(ground-up loss − deductible, 0), policy limit); portfolio gross loss sums property payouts."
   - id: FIN-002
     provenance: ASSUMPTION
     title: Synthetic property policy terms
     statement: "Each run's deductible and policy limit are assumed percentages of each building's TIV, applied to every synthetic building. The starter exposure contains no verified policy terms. The default 0% deductible and 100% limit reproduce ground-up loss."
+  - id: FIN-003
+    provenance: ASSUMPTION
+    title: Portfolio treaty waterfall
+    statement: "For each scenario, quota-share recovery = aggregate gross insured loss × ceded percentage. Catastrophe XOL recovery = min(max(retained event loss − attachment, 0), layer limit). Net loss is retained event loss less cat recovery. The layer applies once to the aggregate scenario, not to each building. The terms are user-entered assumptions, with no reinstatements, annual aggregate limit, reinstatement premium, or treaty coverage verification."
   - id: HAZ-003
     provenance: ASSUMPTION
     title: Unvalidated drainage sensitivity

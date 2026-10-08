@@ -7,7 +7,7 @@ import os
 from time import perf_counter
 from typing import Any
 from uuid import uuid4
-from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.audit.ledger import append_run, read_ledger, verify_chain
@@ -19,6 +19,7 @@ from app.engine.pipeline import run_model
 from app.engine.exposure_preview import ai_available, preview_exposure
 from app.engine.vulnerability import vulnerability_matrix
 from app.engine.document_review import MAX_BYTES, review_document
+from app.engine.coordinate_schedule import MAX_COORDINATE_BYTES, parse_coordinate_csv
 from app.engine.loss_terms import LossTerms, calculate_loss
 from app.schemas import PreviewRequest, RunRequest
 
@@ -152,7 +153,21 @@ def create_run(body: RunRequest, claims: dict = Depends(require_auth)):
                 "reviewed": True,
                 "reviewed_at": datetime.now(timezone.utc).isoformat(),
             }
+            if body.coordinate_preview_id:
+                if not body.coordinates_reviewed:
+                    raise ValueError('Confirm the coordinate schedule before running the model')
+                coordinates = PREVIEWS.get(body.coordinate_preview_id)
+                if not coordinates or coordinates.get('kind') != 'coordinates' or coordinates['owner_id'] != claims['sub'] or coordinates['source_preview_id'] != body.preview_id or datetime.now(timezone.utc) - coordinates['created_at'] > timedelta(hours=1):
+                    raise ValueError('Preview this exact coordinate schedule again before running the model')
+                payload['coordinate_rows'] = coordinates['rows']
+                payload['coordinate_review'] = {
+                    'filename': coordinates['filename'], 'rows': coordinates['rows'],
+                    'reviewed': True, 'reviewed_at': datetime.now(timezone.utc).isoformat(),
+                    'status': 'User-supplied coordinates; raster bounds checked, addresses not independently verified.',
+                }
         else:
+            if body.coordinate_preview_id:
+                raise ValueError('Review a free-text exposure before attaching a coordinate schedule')
             payload["exposure_groups"] = []
             payload["exposure_source"] = "none"
         result = run_model(payload, ingested=PORTFOLIO)
@@ -167,6 +182,29 @@ def create_run(body: RunRequest, claims: dict = Depends(require_auth)):
     return payload
 
 
+@app.post('/api/exposure/coordinates/preview', dependencies=[Depends(require_auth)])
+async def preview_coordinates(file: UploadFile = File(...), preview_id: str = Form(...), claims: dict = Depends(require_auth)):
+    try:
+        reviewed = PREVIEWS.get(preview_id)
+        if not reviewed or reviewed['owner_id'] != claims['sub'] or datetime.now(timezone.utc) - reviewed['created_at'] > timedelta(hours=1) or not reviewed['result']['groups']:
+            raise ValueError('Preview and review the free-text exposure before uploading its coordinate schedule')
+        if not (file.filename or '').lower().endswith('.csv'):
+            raise ValueError('Upload a UTF-8 .csv coordinate schedule')
+        rows = parse_coordinate_csv(await file.read(MAX_COORDINATE_BYTES + 1), reviewed['result']['groups'], PORTFOLIO.hotspots)
+        coordinate_preview_id = str(uuid4())
+        PREVIEWS[coordinate_preview_id] = {
+            'kind': 'coordinates', 'source_preview_id': preview_id, 'owner_id': claims['sub'],
+            'created_at': datetime.now(timezone.utc), 'filename': file.filename, 'rows': rows,
+        }
+        return {'coordinate_preview_id': coordinate_preview_id, 'filename': file.filename,
+                'rows_count': len(rows), 'rows': rows,
+                'status': 'Coordinates supplied by the user and checked against the raster extent; address accuracy is not independently verified.'}
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    finally:
+        await file.close()
+
+
 @app.get("/api/runs/latest", dependencies=[Depends(require_auth)])
 def latest_run(claims: dict = Depends(require_auth)):
     owner_id = claims["sub"]
@@ -179,6 +217,40 @@ def latest_run(claims: dict = Depends(require_auth)):
     if not result:
         raise HTTPException(404, "No run available")
     return _public(result)
+
+
+@app.post("/api/runs/{run_id}/refresh", dependencies=[Depends(require_auth)])
+def refresh_run(run_id: str, claims: dict = Depends(require_auth)):
+    previous = _owned_run(run_id, claims["sub"])
+    if previous.get("sample_run"):
+        raise HTTPException(422, "The shared sample run cannot be refreshed for an account")
+    controls = previous.get("controls") or {}
+    payload = {key: controls[key] for key in (
+        "apply_drainage_correction", "free_text", "deductible_pct", "policy_limit_pct",
+        "quota_share_ceded_pct", "cat_xol_applies", "cat_xol_attachment_kes", "cat_xol_limit_kes",
+    ) if key in controls}
+    review = previous.get("exposure_review")
+    if str(payload.get("free_text") or "").strip():
+        if not review or not review.get("reviewed") or not review.get("groups"):
+            raise HTTPException(422, "Review the saved exposure again before refreshing this portfolio run")
+        payload.update(exposure_groups=review["groups"], exposure_source=review.get("source", "reviewed"), exposure_review=review)
+        coordinate_review = previous.get('coordinate_review')
+        if coordinate_review and coordinate_review.get('reviewed'):
+            payload.update(coordinate_rows=coordinate_review['rows'], coordinate_review=coordinate_review)
+    else:
+        payload.update(exposure_groups=[], exposure_source="none")
+    try:
+        result = run_model(payload, ingested=PORTFOLIO)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    result["owner_id"] = claims["sub"]
+    result["refreshed_from_run_id"] = run_id
+    save_run(result)
+    STORE[result["run_id"]] = result
+    record = append_run(result)
+    response = _public(result)
+    response["audit_record"] = record
+    return response
 
 
 @app.get("/api/runs/{run_id}", dependencies=[Depends(require_auth)])

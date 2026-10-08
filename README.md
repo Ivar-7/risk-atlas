@@ -57,9 +57,11 @@ npm run dev
 ```
 
 Open `http://localhost:5173/dashboard/` for the live API-backed underwriting
-summary. A portfolio run from `#workspace` opens `#overview`, with loss,
-exposure, concentration, and review checks together. Detailed scenario, map,
-construction, evidence, and assumptions views remain in the sidebar. The old
+summary. A reviewed property calculation from `#workspace` opens `#overview`
+with that property's loss, terms, location and review checks. A run with added
+free-text exposure opens `#overview` for those added buildings alone; `#portfolio`
+holds the aggregate starter plus added portfolio. Detailed scenario,
+map, construction, evidence, and assumptions views remain in the sidebar. The old
 `/app/` path redirects to the workspace tab.
 The document review tab accepts text PDFs and `.docx` files, and includes the
 supplied PDF and Word offer as sample inputs. It shows extracted source evidence,
@@ -79,9 +81,17 @@ The portfolio workspace can apply an assumed deductible and policy limit to
 each synthetic building, both expressed as percentages of its TIV. The default
 0% deductible and 100% limit leave gross insured loss equal to ground-up
 damage. The API and dashboard keep both amounts separate for every scenario;
-the EP curve and AAL use gross insured loss. These are illustrative uniform
-terms, not actual policies. Reinsurance recoveries are outside the portfolio
-model; the separate document calculator does not feed the portfolio curve.
+the gross EP curve and AAL use gross insured loss. Assumed portfolio quota share
+and an optional aggregate catastrophe excess-of-loss layer produce net retained
+loss, a net EP curve and net AAL. These are illustrative terms, not verified
+contracts. The separate document calculator does not feed the portfolio curve.
+
+Building damage uses the documented five-tier construction matrix in
+`config/model_parameters.yaml`: a positive proxy score selects that tier's
+fixed damage ratio for the building class, while zero selects 0%. The ratios
+are illustrative assumptions informed by the JRC Africa residential reference;
+the score is not converted to flood depth. See `docs/assumptions.md` for the
+full matrix and the source-tier naming caveat.
 
 Free-text exposure must be previewed before a run. Without an API key, the
 preview uses strict rules and is labelled as such. For model-backed structured
