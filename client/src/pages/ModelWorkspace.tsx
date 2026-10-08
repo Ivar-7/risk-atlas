@@ -3,6 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { MapPin } from 'lucide-react'
+import LiquidWaveSpinner from '@/components/ui/spinner-10'
 import DocumentReview from '../features/model/DocumentReview'
 import { calculateDocumentLoss, type DocumentAssessment, type LossCalculation, type LossTerms } from '../features/model/api'
 import { money } from '../features/model/format'
@@ -57,6 +58,7 @@ export default function ModelWorkspace({ assessment, onReviewed }: { assessment:
   const [result, setResult] = useState<LossCalculation | null>(null)
   const [confirmed, setConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
   useEffect(() => { setTerms(assessment ? initialTerms(assessment) : emptyTerms); setResult(null); setConfirmed(false); setError('') }, [assessment])
   const update = (patch: Partial<LossTerms>) => { setTerms((current) => ({ ...current, ...patch })); setResult(null); setConfirmed(false) }
@@ -92,8 +94,8 @@ export default function ModelWorkspace({ assessment, onReviewed }: { assessment:
 
   return <div className="space-y-5 p-4 text-text sm:p-6">
     <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-accent">Model workspace</p><h2 className="mt-1 text-xl font-semibold">Document and loss model</h2></div>
-    <DocumentReview onReviewed={onReviewed} />
-    {!assessment ? <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Upload a property document to locate the risk and review its terms. A verified ground-up loss and contract terms are required for the loss calculation.</p> : <>
+    <DocumentReview onReviewed={onReviewed} onAnalyzing={setAnalyzing} />
+    {analyzing ? <LiquidWaveSpinner size="lg" className="mx-auto py-4" /> : !assessment ? <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Upload a property document to locate the risk and review its terms. A verified ground-up loss and contract terms are required for the loss calculation.</p> : <>
       <div className="rounded-xl border border-border bg-surface p-5"><p className="font-semibold">{fields?.insured?.value || assessment.filename}</p><p className="mt-1 text-xs text-text-muted">{assessment.filename} · {Object.keys(fields ?? {}).length} source fields extracted. Check each value against the document.</p><div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-text-muted">{fields?.address && <span>{fields.address.value} · {fields.address.source}</span>}{fields?.total_insured_value && <span>Stated TIV: KES {fields.total_insured_value.value} · {fields.total_insured_value.source}</span>}</div></div>
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-xl border border-border bg-surface p-5 shadow-dashboard"><h3 className="font-semibold">Verified financial inputs</h3><p className="mt-1 text-xs leading-5 text-text-muted">The model calculates a single occurrence from these amounts. It does not infer damage from the hazard proxy or insured value.</p>
