@@ -9,22 +9,24 @@ Start the model API from the repository root:
 ```bash
 python -m venv server/.venv
 server/.venv/bin/pip install -r server/requirements.txt
-cp .env.example .env
-# Add your Neon pooled DATABASE_URL and Clerk secret key to .env
 PYTHONPATH=server server/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
+Local environment files are `server/.env` and `client/.env`. For a fresh
+checkout, copy each folder's `.env.example` once and fill in local values.
+Never commit either `.env` file.
+
 In Neon, open the `risk-atlas` project, select the `production` branch, and
 copy its pooled PostgreSQL connection string from **Connect**. Set that string
-as `DATABASE_URL` in the root `.env` file. The backend loads `.env`, requires
-TLS for database connections, and creates the `model_runs` table on startup.
+as `DATABASE_URL` in `server/.env`. The backend loads that file, requires TLS
+for database connections, and creates the `model_runs` table on startup.
 Model runs can then be fetched by ID after an API restart. Never put the
 connection string in `client/` or a `VITE_*` variable. The server needs its own
 persistent process; Vite only proxies `/api` during local development.
 
 Clerk owns sign-in, sign-up, verification, and profile management. Put the
-publishable key in `client/.env.local` as `VITE_CLERK_PUBLISHABLE_KEY`, and set
-`CLERK_SECRET_KEY` in the backend `.env`. Set `CLERK_AUTHORIZED_PARTIES` to the
+publishable key in `client/.env` as `VITE_CLERK_PUBLISHABLE_KEY`, and set
+`CLERK_SECRET_KEY` in `server/.env`. Set `CLERK_AUTHORIZED_PARTIES` to the
 exact frontend origins allowed to call the API (including production).
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is for Next.js and is not read by Vite.
 The dashboard and model workspace require a Clerk session; the API verifies
@@ -58,7 +60,7 @@ publishing a scaled loss estimate.
 
 Free-text exposure must be previewed before a run. Without an API key, the
 preview uses strict rules and is labelled as such. For model-backed structured
-extraction, set `OPENAI_API_KEY` in the backend environment and optionally
+extraction, set `OPENAI_API_KEY` in `server/.env` and optionally
 `RISK_ATLAS_OPENAI_MODEL` (default `gpt-4o-mini`). The backend calls the
 OpenAI Responses API; the key stays server-side. The user reviews extracted
 count, class, named place, and value before those synthetic rows change the
@@ -69,11 +71,11 @@ with `python3 scripts/build_proxy_overlays.py` (requires Pillow and numpy).
 Regenerate these images if the source rasters change. Hotspot detection is
 sampled from the rasters by the backend on each run; named-centre coordinates
 are approximate. To use a different API port with Vite, set
-`RISK_ATLAS_API_TARGET=http://127.0.0.1:8001` before `npm run dev`.
+`RISK_ATLAS_API_TARGET=http://127.0.0.1:8001` in `client/.env`.
 
 The included exposure CSV is synthetic. To use your own geocoded portfolio,
-set `RISK_ATLAS_EXPOSURE_CSV=/absolute/path/to/exposure.csv` before starting
-the API. The CSV must contain the columns used by the sample in
+set `RISK_ATLAS_EXPOSURE_CSV=/absolute/path/to/exposure.csv` in `server/.env`.
+The CSV must contain the columns used by the sample in
 `data/exposure_nairobi_with_hazard.csv`, including `synthetic` (`true` or
 `false`) and the five `hazard_score_*` fields. Set `synthetic=false` only for
 locations whose provenance you have verified. The API reports the declared

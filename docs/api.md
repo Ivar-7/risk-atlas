@@ -2,7 +2,7 @@
 
 Run `PYTHONPATH=server server/.venv/bin/python -m uvicorn app.main:app --port 8000` from the repository root. The frontend proxies `/api` to this service in development.
 
-Set `DATABASE_URL` to the Neon pooled PostgreSQL URL in the root `.env` file for run persistence. The API initializes its `model_runs` table on startup. Set `CLERK_SECRET_KEY` and `CLERK_AUTHORIZED_PARTIES` there as well. Clerk handles accounts in the frontend. Every model endpoint below requires a valid Clerk session; only health is public.
+Set `DATABASE_URL` to the Neon pooled PostgreSQL URL in `server/.env` for run persistence. The API initializes its `model_runs` table on startup. Set `CLERK_SECRET_KEY` and `CLERK_AUTHORIZED_PARTIES` there as well. Clerk handles accounts in the frontend. Every model endpoint below requires a valid Clerk session; only health is public.
 
 - `GET /api/health` — service status and latest run ID.
 - `GET /api/defaults` — model parameters and assumptions.

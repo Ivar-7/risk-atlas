@@ -14,7 +14,7 @@ from psycopg.types.json import Jsonb
 
 
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "migrations" / "001_initial.sql"
-load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 def configured() -> bool:
