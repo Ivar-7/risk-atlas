@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { MapPin } from 'lucide-react'
+import { FileText, MapPin } from 'lucide-react'
 import LiquidWaveSpinner from '@/components/ui/spinner-10'
 import DocumentReview from '../features/model/DocumentReview'
 import { calculateDocumentLoss, type DocumentAssessment, type LossCalculation, type LossTerms } from '../features/model/api'
@@ -118,7 +118,26 @@ export default function ModelWorkspace({ assessment, onReviewed }: { assessment:
     <div><p className="text-xs font-medium uppercase tracking-[0.18em] text-accent">Model workspace</p><h2 className="mt-1 text-xl font-semibold">Document and loss model</h2></div>
     <DocumentReview onReviewed={onReviewed} onAnalyzing={setAnalyzing} />
     {analyzing ? <LiquidWaveSpinner size="lg" className="mx-auto py-4" /> : !assessment ? <p className="rounded-xl border border-border bg-surface p-5 text-sm text-text-muted">Upload a property document to locate the risk. When it states a construction type and insured value within the hazard layer, the model calculates illustrative losses across five scenarios.</p> : <>
-      <div className="rounded-xl border border-border bg-surface p-5"><p className="font-semibold">{fields?.insured?.value || assessment.filename}</p><p className="mt-1 text-xs text-text-muted">{assessment.filename} · {Object.keys(fields ?? {}).length} source fields extracted. Check each value against the document.</p><div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-text-muted">{fields?.address && <span>{fields.address.value} · {fields.address.source}</span>}{fields?.total_insured_value && <span>Stated TIV: KES {fields.total_insured_value.value} · {fields.total_insured_value.source}</span>}</div></div>
+      <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+        <p className="text-base font-semibold leading-6 text-text">{fields?.insured?.value || assessment.filename}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-text-muted"><FileText size={13} className="shrink-0 text-accent" /><span className="break-all">{assessment.filename}</span></span>
+          <span className="rounded-full bg-surface-alt px-2 py-0.5 text-[10px] font-medium text-text-muted">{Object.keys(fields ?? {}).length} source fields extracted</span>
+        </div>
+        <p className="mt-1.5 text-[11px] text-text-muted">Check each value against the document.</p>
+        {(fields?.address || fields?.total_insured_value) && <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {fields.address && <div className="min-w-0 rounded-lg border border-accent/15 border-l-2 border-l-accent/70 bg-surface-alt/50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Address</p>
+            <p className="mt-1 text-sm font-medium leading-5 text-text">{fields.address.value}</p>
+            <span className="mt-2 inline-flex rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] text-text-muted">{fields.address.source}</span>
+          </div>}
+          {fields.total_insured_value && <div className="min-w-0 rounded-lg border border-accent/15 border-l-2 border-l-accent/70 bg-surface-alt/50 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Stated TIV</p>
+            <p className="mt-1 text-lg font-semibold leading-6 text-accent"><span className="mr-1 text-xs font-medium text-text-muted">KES</span>{fields.total_insured_value.value}</p>
+            <span className="mt-2 inline-flex rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] text-text-muted">{fields.total_insured_value.source}</span>
+          </div>}
+        </div>}
+      </div>
       {financialModel && <section className="rounded-xl border border-border bg-surface p-5 shadow-dashboard" aria-label="Modelled document scenario losses">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">Modelled flood damage by scenario</h3><p className="mt-1 text-xs leading-5 text-text-muted">Hazard score at the document coordinates → damage ratio for {financialModel.housing_class.replaceAll('_', ' ')} → physical loss on {currency(financialModel.tiv_kes)} stated TIV. Return periods are assumed.</p></div><label className="text-xs font-medium">Scenario for financial terms<select value={selectedTier} onChange={(event) => chooseTier(event.target.value)} className="mt-2 block rounded-md border border-input-border bg-surface px-3 py-2 text-sm">{financialModel.scenarios.map((scenario) => <option key={scenario.tier} value={scenario.tier}>1-in-{scenario.return_period_years} · {scenario.tier}</option>)}</select></label></div>
         <div className="mt-5 h-64 w-full" role="img" aria-label="Modelled ground-up flood loss by assumed return period for this document"><ResponsiveContainer width="100%" height="100%"><LineChart data={financialModel.scenarios} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}><CartesianGrid vertical={false} stroke={chartTheme.grid} /><XAxis dataKey="return_period_years" tickFormatter={(value: number) => `${value}y`} tick={{ fill: chartTheme.axisLabel, fontSize: 12 }} /><YAxis tickFormatter={(value: number) => money(value).replace('KES ', '')} width={70} tick={{ fill: chartTheme.axisLabel, fontSize: 12 }} /><Tooltip formatter={(value) => money(Number(value))} labelFormatter={(value) => `1-in-${value} assumed return period`} contentStyle={chartTheme.tooltip.contentStyle} /><Line type="linear" dataKey="ground_up_loss_kes" name="Ground-up loss" stroke={chartTheme.primary} strokeWidth={2.5} dot={{ r: 4 }} isAnimationActive={false} /></LineChart></ResponsiveContainer></div>
