@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { UserButton, useUser } from '@clerk/react'
-import { BarChart3, Info, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, X } from 'lucide-react'
+import { BarChart3, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, X } from 'lucide-react'
 import Dashboard from '../components/ui/dashboard-4'
 import { validateDashboardRun } from '../components/ui/dashboard-4-utils/model'
 import { DashboardSidebar, dashboardSections, type DashboardSectionId } from '../components/ui/dashboard-sidebar'
@@ -111,9 +111,8 @@ export default function DashboardPage() {
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <button type="button" onClick={() => setSearchOpen(true)} className="flex h-8 items-center gap-2 rounded-md bg-surface-alt px-2.5 text-xs text-text-muted transition-colors hover:bg-border hover:text-text sm:w-52" aria-label="Search dashboard sections"><Search size={15} /><span className="hidden flex-1 text-left sm:inline">Search sections</span><kbd className="hidden rounded border border-border bg-surface px-1 text-[10px] sm:inline">⌘K</kbd></button>
-          <span className="hidden items-center gap-2 text-xs text-text-muted md:flex"><span className={`h-1.5 w-1.5 rounded-full ${run ? 'bg-success' : 'bg-warning'}`} />{run ? 'API connected' : loading ? 'Connecting…' : 'API unavailable'}</span>
           <div className="flex items-center gap-2.5" aria-label={`${greeting}, ${user?.fullName ?? firstName}`}>
-            <div className="hidden text-right sm:block"><p className="text-xs font-semibold text-text">Hi, {firstName}</p><p className="text-[11px] text-text-muted">{greeting} · Underwriter</p></div>
+            <div className="hidden text-right sm:block"><p className="text-xs font-semibold text-text">Hi, {firstName}</p><p className="text-[11px] text-text-muted">{greeting}</p></div>
             <UserButton />
           </div>
         </div>
@@ -124,8 +123,6 @@ export default function DashboardPage() {
           <div><p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent">Risk Atlas workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{activeSection === 'overview' ? 'Nairobi flood risk overview' : activeTitle}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{sectionDescriptions[activeSection]}</p></div>
           {run && activeSection !== 'workspace' && <span className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted"><BarChart3 size={15} />{run.scenarios.length} assumed scenarios</span>}
         </div>
-
-        {activeSection !== 'workspace' && <div className="mb-5 flex items-start gap-3 rounded-xl border border-warning/25 bg-warning-tint px-4 py-3 text-xs leading-5 text-warning"><Info size={16} className="mt-0.5 shrink-0" /><p><strong className="font-medium">Interpretation matters.</strong> {run ? run.disclaimer : 'Exposure provenance and model assumptions will load from the API.'} These estimates are not for underwriting.</p></div>}
 
         {run && activeSection !== 'workspace' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
           <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Backend model engine</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-3 text-sm text-text-muted">AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations · Run {run.run_id.slice(0, 8)} · {new Date(run.created_at).toLocaleString('en-KE')}</p></div>
