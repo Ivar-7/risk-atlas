@@ -7,8 +7,8 @@ export function DashboardStats({ run, scenario }: { run: RunResult; scenario: Sc
   const stats = [
     { label: 'Total insured value', value: money(run.metrics.total_tiv_kes), detail: `${run.metrics.locations.toLocaleString('en-KE')} locations`, icon: Building2 },
     { label: `${scenarioLabel(scenario)} gross loss`, value: money(scenario.loss_kes), detail: 'Modelled from the current run', icon: Activity },
-    { label: 'Locations with modelled loss', value: `${scenario.affected_locations} / ${run.metrics.locations}`, detail: `${money(scenario.affected_tiv_kes)} in affected value`, icon: Waves },
-    { label: 'Annual average loss', value: money(run.metrics.aal_kes), detail: 'Integrated from assumed event frequencies', icon: Radar },
+    { label: 'Physically affected locations', value: `${scenario.affected_locations} / ${run.metrics.locations}`, detail: `${money(scenario.affected_tiv_kes)} in affected value`, icon: Waves },
+    { label: 'Gross insured annual average loss', value: money(run.metrics.aal_kes), detail: 'Integrated from assumed event frequencies', icon: Radar },
   ]
 
   return <>

@@ -61,9 +61,9 @@ def load_run(run_id: str) -> dict[str, Any] | None:
     return row[0] if row else None
 
 
-def load_latest_run() -> dict[str, Any] | None:
+def load_latest_run(owner_id: str) -> dict[str, Any] | None:
     if not configured():
         return None
     with connect() as connection:
-        row = connection.execute("SELECT result FROM model_runs ORDER BY created_at DESC LIMIT 1").fetchone()
+        row = connection.execute("SELECT result FROM model_runs WHERE result->>'owner_id' = %s ORDER BY created_at DESC LIMIT 1", (owner_id,)).fetchone()
     return row[0] if row else None

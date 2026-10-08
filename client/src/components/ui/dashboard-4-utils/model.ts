@@ -10,14 +10,20 @@ export function validateDashboardRun(run: RunResult): void {
   if (!Number.isFinite(run.metrics?.synthetic_locations) || !Number.isFinite(run.metrics?.locations)) {
     throw new Error('The model API is missing portfolio provenance counts')
   }
+  if (!Number.isFinite(run.metrics?.ground_up_aal_kes) || !Number.isFinite(run.controls?.deductible_pct) || !Number.isFinite(run.controls?.policy_limit_pct)) {
+    throw new Error('The model API is missing ground-up loss or policy terms')
+  }
   if (!Number.isFinite(run.hazard_validation?.detected_common) || !Array.isArray(run.sensitivity?.depth_scale) || !Array.isArray(run.sensitivity?.return_periods)) {
     throw new Error('The model API is missing hotspot validation or assumption sensitivity; restart the updated backend')
   }
+  if (run.interventions?.drainage?.validation_status !== 'unvalidated sensitivity' || !Number.isFinite(run.metrics?.drainage_delta_1_in_100_kes)) {
+    throw new Error('The model API is missing the drainage sensitivity disclosure; restart the updated backend')
+  }
   for (const scenario of run.scenarios) {
-    if (!Number.isFinite(scenario.loss_kes) || !Number.isFinite(scenario.affected_tiv_kes) || !Number.isFinite(scenario.affected_locations)) {
+    if (!Number.isFinite(scenario.loss_kes) || !Number.isFinite(scenario.ground_up_loss_kes) || !Number.isFinite(scenario.drainage_sensitivity_loss_kes) || !Number.isFinite(scenario.affected_tiv_kes) || !Number.isFinite(scenario.affected_locations)) {
       throw new Error('The model API is missing dashboard scenario values')
     }
-    if (run.locations.some((location) => !Number.isFinite(location.scenario_losses_kes?.[scenario.tier]) || !Number.isFinite(location.hazard_scores?.[scenario.tier]))) {
+    if (run.locations.some((location) => !Number.isFinite(location.scenario_losses_kes?.[scenario.tier]) || !Number.isFinite(location.ground_up_scenario_losses_kes?.[scenario.tier]) || !Number.isFinite(location.hazard_scores?.[scenario.tier]))) {
       throw new Error('The model API is missing per-location scenario values')
     }
   }
@@ -40,11 +46,12 @@ export function constructionColor(housingClass: string): string {
 }
 
 export function downloadScenario(run: RunResult, scenario: Scenario): void {
-  const columns = ['location_id', 'sample_record', 'latitude', 'longitude', 'housing_class', 'tiv_kes', 'proxy_tier', 'susceptibility_score', 'modelled_gross_loss_kes']
+  const columns = ['location_id', 'sample_record', 'latitude', 'longitude', 'housing_class', 'tiv_kes', 'deductible_kes', 'policy_limit_kes', 'proxy_tier', 'susceptibility_score', 'modelled_ground_up_loss_kes', 'modelled_gross_insured_loss_kes']
   const escapeCsv = (value: string | number | boolean) => `"${String(value).replaceAll('"', '""')}"`
   const lines = run.locations.map((location) => [
     location.loc_id, location.synthetic, location.lat, location.lon, location.housing_class,
-    location.tiv_kes, scenario.tier, scenarioHazard(location, scenario.tier),
+    location.tiv_kes, location.deductible_kes, location.policy_limit_kes, scenario.tier, scenarioHazard(location, scenario.tier),
+    location.ground_up_scenario_losses_kes[scenario.tier],
     scenarioLoss(location, scenario.tier),
   ].map(escapeCsv).join(','))
   const blob = new Blob([[columns.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' })

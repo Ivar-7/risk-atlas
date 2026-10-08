@@ -23,6 +23,23 @@ def scenario_losses(exposure: pd.DataFrame, parameters: dict | None = None) -> d
     return losses
 
 
+def insured_losses(
+    ground_up_losses: dict[str, np.ndarray],
+    tiv: np.ndarray,
+    deductible_pct: float,
+    policy_limit_pct: float,
+) -> dict[str, np.ndarray]:
+    """Apply one assumed occurrence deductible and limit to each property, then aggregate."""
+    if not 0 <= deductible_pct <= 100 or not 0 <= policy_limit_pct <= 100:
+        raise ValueError("Policy percentages must be between 0 and 100")
+    deductible = tiv * deductible_pct / 100.0
+    limit = tiv * policy_limit_pct / 100.0
+    return {
+        tier: np.minimum(np.maximum(loss - deductible, 0.0), limit)
+        for tier, loss in ground_up_losses.items()
+    }
+
+
 def location_aal(scenario_loss: dict[str, np.ndarray], parameters: dict | None = None) -> np.ndarray:
     """Trapezoidal integral of the discrete EP curve. Depends on the assumed return periods."""
     params = parameters or load_parameters()

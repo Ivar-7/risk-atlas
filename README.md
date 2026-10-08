@@ -35,10 +35,15 @@ persistent process; Vite only proxies `/api` during local development.
 
 Clerk owns sign-in, sign-up, verification, and profile management in the
 frontend. Put the publishable key in `client/.env` as
-`VITE_CLERK_PUBLISHABLE_KEY`; the dashboard and model workspace require a
-Clerk session. The API does not verify Clerk tokens, so its endpoints are
-public and must not be treated as an authorization boundary. Use an API
-gateway or server-side authentication if direct API access must be restricted.
+`VITE_CLERK_PUBLISHABLE_KEY`. Set `CLERK_ISSUER` in `server/.env` to the
+corresponding Clerk Frontend API origin; the server validates session tokens
+against that issuer's JWKS, checks their authorized origin against
+`RISK_ATLAS_CORS_ORIGINS`, and rejects protected requests if verification is
+not configured. `CLERK_JWT_KEY` may hold the issuer's PEM public key for
+networkless verification. Only `/api/health` is public. Set the same issuer
+and allowed browser origins on hosted API deployments. Previews, saved runs,
+explanations, and audit entries are scoped to the signed-in account. New
+accounts start with the shared synthetic sample run.
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is for Next.js and is not read by Vite.
 Without `DATABASE_URL`, model runs remain available only for the current server
 process.
@@ -68,13 +73,23 @@ checks each starter-kit insured value against floor area × rebuilding cost, all
 documented KES 5,000 rounding. It refuses inconsistent input rather than
 publishing a scaled loss estimate.
 
+The portfolio workspace can apply an assumed deductible and policy limit to
+each synthetic building, both expressed as percentages of its TIV. The default
+0% deductible and 100% limit leave gross insured loss equal to ground-up
+damage. The API and dashboard keep both amounts separate for every scenario;
+the EP curve and AAL use gross insured loss. These are illustrative uniform
+terms, not actual policies. Reinsurance recoveries are outside the portfolio
+model; the separate document calculator does not feed the portfolio curve.
+
 Free-text exposure must be previewed before a run. Without an API key, the
 preview uses strict rules and is labelled as such. For model-backed structured
 extraction, set `OPENAI_API_KEY` in `server/.env` and optionally
 `RISK_ATLAS_OPENAI_MODEL` (default `gpt-4o-mini`). The backend calls the
 OpenAI Responses API; the key stays server-side. The user reviews extracted
 count, class, named place, and value before those synthetic rows change the
-loss curve. The drainage-gap correction is a deterministic rule, not AI.
+loss curve. The optional drainage rule is a deterministic, unvalidated sensitivity,
+not AI. It is off by default. Its uplift is centred on the same proxy-missed
+hotspots used to construct it, so those points do not validate predictive accuracy.
 
 The map's transparent proxy layers are generated from the supplied GeoTIFFs
 with `python3 scripts/build_proxy_overlays.py` (requires Pillow and numpy).
@@ -100,6 +115,8 @@ hazard and vulnerability assumptions.
 - `docs/`    API contract and modelling assumptions
 - `config/` model parameters and assumptions register
 
+The short hackathon write-up is in [`docs/submission_note.md`](docs/submission_note.md).
+
 ## Deploy the API to Heroku
 
 Deploy this repository's **root**, not just `server/`. The root `requirements.txt`
@@ -113,7 +130,7 @@ app directory. Keeping the repository root also makes the API's `config/` and
 	containing these files. Do not choose a subdirectory; the GitHub integration
 	deploys the repository root.
 3. On the app's **Settings** tab, select **Reveal Config Vars** and add
-	`RISK_ATLAS_CORS_ORIGINS` if the frontend is hosted on a different origin.
+	`CLERK_ISSUER` and `RISK_ATLAS_CORS_ORIGINS` for the hosted frontend.
 	Add `DATABASE_URL` using your PostgreSQL connection string if runs must
 	persist across dyno restarts. Set `OPENAI_API_KEY` only if model-backed
 	exposure extraction is required. Keep all secret values out of Git.

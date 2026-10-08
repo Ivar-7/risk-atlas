@@ -42,6 +42,9 @@ def _tiv(text: str) -> tuple[float, bool]:
     match = re.search(r"\b(?:kes|kshs?|ksh)\s*([0-9][0-9,]*(?:\.\d+)?)\s*(m|million|bn|billion)?\b", text.lower())
     if not match:
         return 0.0, False
+    per_building = re.search(r"\b(each|apiece|per\s+(?:building|house|unit|property|dwelling))\b", text.lower())
+    if not per_building:
+        return 0.0, False
     raw = float(match.group(1).replace(",", ""))
     suffix = (match.group(2) or "").lower()
     if suffix in {"m", "million"}:
@@ -82,7 +85,7 @@ def parse_free_text(text: str, hotspots: pd.DataFrame, seed: int = 7) -> tuple[p
         count, got_count = _count(chunk)
         tiv, got_tiv = _tiv(chunk)
         place, got_place = _place(chunk, hotspots)
-        missing = [label for label, valid in (("construction type", got_class), ("count from 1 to 80", got_count), ("KES value per building", got_tiv), ("named hotspot", got_place)) if not valid]
+        missing = [label for label, valid in (("construction type", got_class), ("count from 1 to 80", got_count), ("explicit KES value per building", got_tiv), ("named hotspot", got_place)) if not valid]
         if missing:
             notes.append(f"Skipped “{chunk.strip()[:60]}”: specify {', '.join(missing)}.")
             continue

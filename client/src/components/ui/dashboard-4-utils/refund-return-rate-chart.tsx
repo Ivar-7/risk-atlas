@@ -8,8 +8,8 @@ export function RefundReturnRateChart({ run, scenario }: { run: RunResult; scena
   const maskData = [...run.scenarios].sort((a, b) => a.return_period_years - b.return_period_years)
   return (
     <Panel id="hazard-proxy" className="p-5 sm:p-6">
-      <PanelHeading eyebrow="Hazard" title="Modelled loss reach" description="Locations with modelled loss at each source proxy tier in this run." />
-      <div className="mt-7 h-65 w-full" role="img" aria-label="Counts of locations with modelled loss by source proxy tier">
+      <PanelHeading eyebrow="Hazard" title="Modelled damage reach" description="Locations with ground-up damage at each source proxy tier, before deductibles." />
+      <div className="mt-7 h-65 w-full" role="img" aria-label="Counts of locations with ground-up damage by source proxy tier">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={maskData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke={chartTheme.grid} strokeWidth={1} />
@@ -19,7 +19,7 @@ export function RefundReturnRateChart({ run, scenario }: { run: RunResult; scena
               cursor={{ fill: chartTheme.cursor }}
               contentStyle={chartTheme.tooltip.contentStyle}
               labelStyle={chartTheme.tooltip.labelStyle}
-              formatter={(value) => [`${value} locations`, 'Modelled loss']}
+              formatter={(value) => [`${value} locations`, 'Ground-up damage']}
             />
             <Bar dataKey="affected_locations" isAnimationActive={false} radius={[5, 5, 0, 0]} maxBarSize={54}>
               {maskData.map((entry) => <Cell key={entry.tier} fill={entry.tier === scenario.tier ? chartTheme.primary : chartTheme.navy} />)}

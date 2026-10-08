@@ -21,20 +21,24 @@ assumptions:
     statement: "extreme=10y, severe=25y, moderate=50y, occasional=100y, common=250y, matching the dataset metadata reference mapping. The masks do not carry years. Wider masks are assigned rarer events to make an illustrative EP curve; this is not calibrated frequency evidence."
   - id: VUL-001
     provenance: SOURCED
-    title: JRC Africa residential anchors
-    statement: "Huizinga et al. 2017: 0.1 m → 5% and 1.0 m → 40% for Africa residential. Fitted k=0.51293 in DR=1-exp(-k·depth)."
+    title: JRC Africa residential table
+    statement: "Huizinga, de Moel & Szewczyk (2017), Global flood depth-damage functions, EUR 28552 EN, Table 3-1, printed p. 12 (PDF p. 16): 0 m → 0%, 0.5 m → 22%, 1 m → 38%, 1.5 m → 53%, 2 m → 64%, 3 m → 82%, 4 m → 90%, 5 m → 96%, 6 m → 100%. https://publications.jrc.ec.europa.eu/repository/bitstream/JRC105688/global_flood_depth-damage_functions__10042017.pdf#page=16"
   - id: VUL-002
     provenance: ASSUMPTION
     title: Construction adaptations
-    statement: "No Kenya-specific curve exists (constraint in the brief). Informal, semi-permanent, masonry and RCC use k-multipliers and caps documented in model_parameters.yaml."
+    statement: "Linear interpolation between the JRC table points, clamping outside 0–6 m, is a model choice. Informal, semi-permanent, masonry and RCC use assumed effective-depth multipliers and damage caps documented in model_parameters.yaml. These class adjustments are not JRC values or calibrated Kenya claims curves."
   - id: FIN-001
     provenance: METHOD
-    title: Ground-up loss
-    statement: "Loss = damage_ratio × tiv_kes. Treaty layers and net-of-reinsurance are out of scope per the brief."
+    title: Ground-up and insured loss
+    statement: "Ground-up loss = damage_ratio × tiv_kes. Gross insured loss per property = min(max(ground-up loss − deductible, 0), policy limit); portfolio loss sums property payouts. Treaty layers and net-of-reinsurance remain out of scope."
+  - id: FIN-002
+    provenance: ASSUMPTION
+    title: Synthetic property policy terms
+    statement: "Each run's deductible and policy limit are assumed percentages of each building's TIV, applied to every synthetic building. The starter exposure contains no verified policy terms. The default 0% deductible and 100% limit reproduce ground-up loss."
   - id: HAZ-003
-    provenance: METHOD
-    title: Drainage-gap hazard correction
-    statement: "A deterministic distance kernel around proxy-missed named hotspots increases susceptibility. It changes EP losses but is not a trained AI model or a validated drainage network."
+    provenance: ASSUMPTION
+    title: Unvalidated drainage sensitivity
+    statement: "Optional deterministic distance kernel around the 12 common-proxy-missed named hotspot centres. Disabled in the default run. The same centres define the uplift and cannot independently validate improved prediction. Its loss difference is an unvalidated sensitivity, not measured drainage or an accuracy gain."
   - id: AI-001
     provenance: CONDITIONAL
     title: Reviewed free-text exposure

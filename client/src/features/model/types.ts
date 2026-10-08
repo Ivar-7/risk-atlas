@@ -1,12 +1,15 @@
 export type Controls = {
   apply_drainage_correction: boolean;
   free_text: string;
+  deductible_pct: number;
+  policy_limit_pct: number;
   preview_id?: string;
+  exposure_reviewed?: boolean;
   exposure_source?: string;
 };
 
 export type ExposureGroup = { count: number; housing_class: string; place: string; tiv_each_kes: number; total_tiv_kes: number };
-export type ExposurePreview = { preview_id: string; source: 'none' | 'rules' | 'openai'; model?: string; groups: ExposureGroup[]; notes: string[]; rows_added: number; total_tiv_kes: number };
+export type ExposurePreview = { preview_id: string; source: 'none' | 'rules' | 'openai'; model?: string; response_id?: string; groups: ExposureGroup[]; notes: string[]; rows_added: number; total_tiv_kes: number };
 
 export type LocationRow = {
   loc_id: string;
@@ -14,14 +17,18 @@ export type LocationRow = {
   lon: number;
   housing_class: string;
   tiv_kes: number;
+  deductible_kes: number;
+  policy_limit_kes: number;
   nearest_hotspot: string;
   distance_to_hotspot_km: number;
   drainage_uplift: number;
   aal_kes: number;
+  ground_up_aal_kes: number;
   loss_cost_pct: number;
   source: string;
   synthetic: boolean;
   scenario_losses_kes: Record<string, number>;
+  ground_up_scenario_losses_kes: Record<string, number>;
   hazard_scores: Record<string, number>;
 };
 
@@ -32,6 +39,12 @@ export type RunResult = {
   briefing: string;
   model: { name: string; version: string; currency: string; team: string };
   controls: Controls;
+  exposure_review?: { input_text: string; groups: ExposureGroup[]; source: string; model: string | null; response_id: string | null; reviewed: boolean; reviewed_at: string } | null;
+  exposure_comparison?: {
+    basis: string;
+    without_added: { locations: number; total_tiv_kes: number; aal_kes: number; scenarios: Record<string, number> };
+    with_added: { locations: number; total_tiv_kes: number; aal_kes: number; scenarios: Record<string, number> };
+  };
   labels: Record<string, string>;
   metrics: Record<string, number>;
   scenarios: Array<{
@@ -40,7 +53,9 @@ export type RunResult = {
     annual_exceedance: number;
     meaning: string;
     loss_kes: number;
+    ground_up_loss_kes: number;
     baseline_loss_kes: number;
+    drainage_sensitivity_loss_kes: number;
     affected_locations: number;
     affected_tiv_kes: number;
   }>;
@@ -49,7 +64,9 @@ export type RunResult = {
     return_period_years: number;
     annual_exceedance: number;
     loss_kes: number;
+    ground_up_loss_kes: number;
     baseline_loss_kes: number;
+    drainage_sensitivity_loss_kes: number;
     provenance: string;
   }>;
   by_housing_class: Array<{
@@ -57,12 +74,14 @@ export type RunResult = {
     locations: number;
     tiv_kes: number;
     aal_kes: number;
+    ground_up_aal_kes: number;
     loss_cost_pct: number;
   }>;
   by_hotspot: Array<{ name?: string; nearest_hotspot?: string; locations: number; tiv_kes: number; aal_kes: number }>;
   vulnerability_matrix: Array<{
     housing_class: string;
     cap: number;
+    depth_multiplier: number;
     differs_from_jrc: string;
     by_depth_m: Record<string, number>;
   }>;
@@ -75,6 +94,9 @@ export type RunResult = {
       enabled: boolean;
       missed_hotspots: string[];
       buildings_uplifted: number;
+      sensitivity_buildings_uplifted: number;
+      sensitivity_missed_hotspots: string[];
+      validation_status: string;
       method: string;
     };
     free_text: { parsed: boolean; rows_added: number; notes: string[]; place?: string; source?: string; groups?: ExposureGroup[] };

@@ -1,10 +1,19 @@
 import type { Controls, Explanation, ExposurePreview, RunResult } from './types'
 
-export const defaultControls: Controls = { apply_drainage_correction: true, free_text: '' }
+export const defaultControls: Controls = { apply_drainage_correction: false, free_text: '', deductible_pct: 0, policy_limit_pct: 100 }
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ?? ''
+let tokenGetter: (() => Promise<string | null>) | null = null
 
-function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(`${apiBaseUrl}${path}`, init)
+export function setApiTokenGetter(getToken: (() => Promise<string | null>) | null): void {
+  tokenGetter = getToken
+}
+
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const token = await tokenGetter?.()
+  if (!token) throw new Error('Sign in to access the model API')
+  const headers = new Headers(init?.headers)
+  headers.set('Authorization', `Bearer ${token}`)
+  return fetch(`${apiBaseUrl}${path}`, { ...init, headers })
 }
 
 async function json<T>(response: Response): Promise<T> {

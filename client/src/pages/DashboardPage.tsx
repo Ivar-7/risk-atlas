@@ -1,25 +1,26 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import { UserButton, useUser } from '@clerk/react'
+import { UserButton, useAuth, useUser } from '@clerk/react'
 import { BarChart3, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, X } from 'lucide-react'
 import Dashboard from '../components/ui/dashboard-4'
 import FloatingNav from '../components/ui/floating-nav'
 import { validateDashboardRun } from '../components/ui/dashboard-4-utils/model'
 import { DashboardSidebar, dashboardSections, type DashboardSectionId } from '../components/ui/dashboard-sidebar'
 import DashboardLoader from '../components/ui/v-skeleton-8'
+import CatModelRunner from '../features/model/CatModelRunner'
 const ModelWorkspace = lazy(() => import('./ModelWorkspace'))
-import { fetchLatest, type DocumentAssessment } from '../features/model/api'
+import { fetchLatest, setApiTokenGetter, type DocumentAssessment } from '../features/model/api'
 import { money } from '../features/model/format'
 import type { RunResult } from '../features/model/types'
 
 const sectionDescriptions: Record<DashboardSectionId, string> = {
   overview: 'A concise view of the latest model run and portfolio loss.',
-  'loss-curve': 'Compare gross loss across the model’s assumed return periods.',
+  'loss-curve': 'Compare ground-up and gross insured loss across the model’s assumed return periods.',
   'hazard-proxy': 'See how many portfolio locations have modelled loss at each proxy tier.',
   'exposure-map': 'Explore modelled locations and named hotspots on OpenStreetMap.',
   construction: 'Compare selected-scenario loss across building classes.',
   'ai-evidence': 'Inspect the contribution of reviewed model extraction and the deterministic drainage rule.',
   assumptions: 'Review the inputs, provenance, and assumptions behind this run.',
-  workspace: 'Review document-backed loss terms, location and loss progression.',
+  workspace: 'Run the Nairobi portfolio model or review a separate property document.',
 }
 
 function timeGreeting() {
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [greeting, setGreeting] = useState(timeGreeting)
+  const { getToken } = useAuth()
   const { user } = useUser()
   const firstName = user?.firstName || user?.fullName?.split(/\s+/)[0] || user?.primaryEmailAddress?.emailAddress.split('@')[0] || 'there'
 
@@ -54,6 +56,11 @@ export default function DashboardPage() {
       setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    setApiTokenGetter(getToken)
+    return () => setApiTokenGetter(null)
+  }, [getToken])
 
   useEffect(() => { void reload() }, [reload])
 
@@ -92,6 +99,12 @@ export default function DashboardPage() {
     setSearchTerm('')
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
+  const acceptRun = (result: RunResult) => {
+    validateDashboardRun(result)
+    setRun(result)
+    setError('')
+    navigateSection('loss-curve')
+  }
   const searchResults = dashboardSections.filter((section) => section.label.toLowerCase().includes(searchTerm.trim().toLowerCase()))
   const activeTitle = dashboardSections.find((section) => section.id === activeSection)?.label ?? 'Overview'
 
@@ -122,11 +135,11 @@ export default function DashboardPage() {
         </div>
 
         {run && activeSection !== 'workspace' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Model run</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-3 text-sm text-text-muted">AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Model run</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-2 text-xs font-medium text-accent">Synthetic portfolio · proxy flood hazard · illustrative return periods</p><p className="mt-3 text-sm text-text-muted">Gross insured AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations</p></div>
           <div className="flex items-center gap-3"><button type="button" onClick={() => void reload()} disabled={loading} className="flex items-center gap-2 rounded-md border border-brand-navy/20 bg-surface px-3 py-2 text-sm text-text hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw size={15} />Refresh</button><button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">Run model</button></div>
         </section>}
         {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>Dashboard data is temporarily unavailable. Please try again.</span><button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div>}
-        {activeSection === 'workspace' && <Suspense fallback={<DashboardLoader />}><ModelWorkspace assessment={assessment} onReviewed={setAssessment} /></Suspense>}
+        {activeSection === 'workspace' && <div className="space-y-8"><CatModelRunner onRun={acceptRun} /><div className="border-t border-border pt-7"><Suspense fallback={<DashboardLoader />}><ModelWorkspace assessment={assessment} onReviewed={setAssessment} /></Suspense></div></div>}
         {run && activeSection !== 'workspace' && <section aria-label={`${activeTitle} dashboard section`}><Dashboard run={run} activeSection={activeSection} /></section>}
       </main>
     </div>

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from math import floor
 
 from PIL import Image
 
@@ -22,8 +23,8 @@ def _raster(tier: str):
 
 def proxy_score(lat: float, lon: float, tier: str) -> float:
     image, west, north, pixel_width, pixel_height = _raster(tier)
-    x = int((lon - west) / pixel_width)
-    y = int((north - lat) / pixel_height)
+    x = floor((lon - west) / pixel_width)
+    y = floor((north - lat) / pixel_height)
     if not (0 <= x < image.width and 0 <= y < image.height):
         return 0.0
     return max(0.0, float(image.getpixel((x, y))))
@@ -31,8 +32,8 @@ def proxy_score(lat: float, lon: float, tier: str) -> float:
 
 def proxy_point_covered(lat: float, lon: float) -> bool:
     image, west, north, pixel_width, pixel_height = _raster('common')
-    x = int((lon - west) / pixel_width)
-    y = int((north - lat) / pixel_height)
+    x = floor((lon - west) / pixel_width)
+    y = floor((north - lat) / pixel_height)
     return 0 <= x < image.width and 0 <= y < image.height
 
 

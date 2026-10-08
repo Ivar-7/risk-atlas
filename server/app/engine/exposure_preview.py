@@ -60,4 +60,8 @@ def preview_exposure(text: str, hotspots: pd.DataFrame) -> dict:
         if not isinstance(group, dict) or not 1 <= group.get('count', 0) <= 80 or group.get('place') not in names or group.get('housing_class') not in schema['properties']['groups']['items']['properties']['housing_class']['enum'] or not 0 < group.get('tiv_each_kes', 0) <= 1_000_000_000:
             raise ValueError('AI extraction returned an invalid exposure group')
         checked.append({**group, 'total_tiv_kes': group['count'] * group['tiv_each_kes']})
-    return {'source': 'openai', 'model': body['model'], 'groups': checked, 'notes': ['Review every extracted value before running the model.'] if checked else ['No complete exposure groups found.'], 'rows_added': sum(g['count'] for g in checked), 'total_tiv_kes': sum(g['total_tiv_kes'] for g in checked)}
+    actual_model = result.get('model')
+    response_id = result.get('id')
+    if not isinstance(actual_model, str) or not actual_model or not isinstance(response_id, str) or not response_id:
+        raise ValueError('AI extraction response lacks model provenance')
+    return {'source': 'openai', 'model': actual_model, 'response_id': response_id, 'groups': checked, 'notes': ['Review every extracted value before running the model.'] if checked else ['No complete exposure groups found.'], 'rows_added': sum(g['count'] for g in checked), 'total_tiv_kes': sum(g['total_tiv_kes'] for g in checked)}

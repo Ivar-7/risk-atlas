@@ -7,10 +7,11 @@ import os
 from time import perf_counter
 from typing import Any
 from uuid import uuid4
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.audit.ledger import append_run, read_ledger, verify_chain
+from app.auth import require_auth
 from app.database import configured as database_configured, initialize as initialize_database, load_latest_run, load_run, save_run
 from app.engine.config_load import load_assumptions, load_parameters
 from app.engine.ingestion import IngestedData, load_portfolio
@@ -24,23 +25,32 @@ from app.schemas import PreviewRequest, RunRequest
 STORE: dict[str, dict[str, Any]] = {}
 PREVIEWS: dict[str, dict[str, Any]] = {}
 PORTFOLIO: IngestedData | None = None
-LATEST: str | None = None
+SAMPLE_RUN_ID: str | None = None
 
 
 def _public(result: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in result.items() if k != "explanations"}
+    return {k: v for k, v in result.items() if k not in {"explanations", "owner_id"}}
+
+
+def _owned_run(run_id: str, owner_id: str) -> dict[str, Any]:
+    result = STORE.get(run_id) or load_run(run_id)
+    if not result or (result.get("owner_id") != owner_id and not result.get("sample_run")):
+        raise HTTPException(404, "Unknown run_id")
+    return result
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global PORTFOLIO, LATEST
+    global PORTFOLIO, SAMPLE_RUN_ID
     initialize_database()
     PORTFOLIO = load_portfolio()
-    result = run_model({"apply_drainage_correction": True, "free_text": ""}, ingested=PORTFOLIO)
+    result = run_model({"apply_drainage_correction": False, "free_text": ""}, ingested=PORTFOLIO)
+    result["owner_id"] = None
+    result["sample_run"] = True
     save_run(result)
     STORE[result["run_id"]] = result
     append_run(result)
-    LATEST = result["run_id"]
+    SAMPLE_RUN_ID = result["run_id"]
     yield
 
 
@@ -63,10 +73,10 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "locations": PORTFOLIO.row_count if PORTFOLIO else 0, "latest_run_id": LATEST, "database_configured": database_configured()}
+    return {"status": "ok", "locations": PORTFOLIO.row_count if PORTFOLIO else 0, "database_configured": database_configured()}
 
 
-@app.get("/api/defaults")
+@app.get("/api/defaults", dependencies=[Depends(require_auth)])
 def defaults():
     params = load_parameters()
     return {
@@ -79,12 +89,12 @@ def defaults():
     }
 
 
-@app.get("/api/capabilities")
+@app.get("/api/capabilities", dependencies=[Depends(require_auth)])
 def capabilities():
     return {"ai_exposure_available": ai_available()}
 
 
-@app.post('/api/documents/analyze')
+@app.post('/api/documents/analyze', dependencies=[Depends(require_auth)])
 async def analyze_document(file: UploadFile = File(...)):
     try:
         started = perf_counter()
@@ -98,13 +108,13 @@ async def analyze_document(file: UploadFile = File(...)):
         await file.close()
 
 
-@app.post('/api/loss/calculate')
+@app.post('/api/loss/calculate', dependencies=[Depends(require_auth)])
 def calculate_document_loss(terms: LossTerms):
     return {key: str(value) if isinstance(value, Decimal) else value for key, value in calculate_loss(terms).items()}
 
 
-@app.post("/api/exposure/preview")
-def preview(body: PreviewRequest):
+@app.post("/api/exposure/preview", dependencies=[Depends(require_auth)])
+def preview(body: PreviewRequest, claims: dict = Depends(require_auth)):
     try:
         result = preview_exposure(body.free_text, PORTFOLIO.hotspots)
         now = datetime.now(timezone.utc)
@@ -112,62 +122,73 @@ def preview(body: PreviewRequest):
             if now - stored["created_at"] > timedelta(hours=1):
                 del PREVIEWS[key]
         preview_id = str(uuid4())
-        PREVIEWS[preview_id] = {"text": body.free_text, "result": result, "created_at": now}
+        PREVIEWS[preview_id] = {"text": body.free_text, "result": result, "created_at": now, "owner_id": claims["sub"]}
         return {**result, "preview_id": preview_id}
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.post("/api/runs")
-def create_run(body: RunRequest):
-    global LATEST
+@app.post("/api/runs", dependencies=[Depends(require_auth)])
+def create_run(body: RunRequest, claims: dict = Depends(require_auth)):
     try:
         payload = body.model_dump()
         if body.free_text.strip():
+            if not body.exposure_reviewed:
+                raise ValueError("Confirm the extracted exposure before running the model")
             reviewed = PREVIEWS.get(body.preview_id or "")
-            if not reviewed or reviewed["text"] != body.free_text or datetime.now(timezone.utc) - reviewed["created_at"] > timedelta(hours=1):
+            if not reviewed or reviewed["owner_id"] != claims["sub"] or reviewed["text"] != body.free_text or datetime.now(timezone.utc) - reviewed["created_at"] > timedelta(hours=1):
                 raise ValueError("Review this exact exposure text before running the model")
             review_result = reviewed["result"]
             if not review_result["groups"] or any(note.startswith("Skipped") for note in review_result["notes"]):
                 raise ValueError("Exposure preview has missing or invalid groups")
             payload["exposure_groups"] = review_result["groups"]
             payload["exposure_source"] = review_result["source"]
+            payload["exposure_review"] = {
+                "input_text": reviewed["text"],
+                "groups": review_result["groups"],
+                "source": review_result["source"],
+                "model": review_result.get("model"),
+                "response_id": review_result.get("response_id"),
+                "reviewed": True,
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            }
         else:
             payload["exposure_groups"] = []
             payload["exposure_source"] = "none"
         result = run_model(payload, ingested=PORTFOLIO)
+        result["owner_id"] = claims["sub"]
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     save_run(result)
     STORE[result["run_id"]] = result
     record = append_run(result)
-    LATEST = result["run_id"]
     payload = _public(result)
     payload["audit_record"] = record
     return payload
 
 
-@app.get("/api/runs/latest")
-def latest_run():
-    result = STORE.get(LATEST or "") or load_latest_run()
+@app.get("/api/runs/latest", dependencies=[Depends(require_auth)])
+def latest_run(claims: dict = Depends(require_auth)):
+    owner_id = claims["sub"]
+    owned = [run for run in STORE.values() if run.get("owner_id") == owner_id]
+    persisted = load_latest_run(owner_id)
+    if persisted:
+        owned.append(persisted)
+    result = max(owned, key=lambda run: run["created_at"]) if owned else None
+    result = result or STORE.get(SAMPLE_RUN_ID or "")
     if not result:
         raise HTTPException(404, "No run available")
     return _public(result)
 
 
-@app.get("/api/runs/{run_id}")
-def get_run(run_id: str):
-    result = STORE.get(run_id) or load_run(run_id)
-    if not result:
-        raise HTTPException(404, "Unknown run_id")
-    return _public(result)
+@app.get("/api/runs/{run_id}", dependencies=[Depends(require_auth)])
+def get_run(run_id: str, claims: dict = Depends(require_auth)):
+    return _public(_owned_run(run_id, claims["sub"]))
 
 
-@app.get("/api/runs/{run_id}/explain/{loc_id}")
-def explain_location(run_id: str, loc_id: str):
-    result = STORE.get(run_id) or load_run(run_id)
-    if not result:
-        raise HTTPException(404, "Unknown run_id")
+@app.get("/api/runs/{run_id}/explain/{loc_id}", dependencies=[Depends(require_auth)])
+def explain_location(run_id: str, loc_id: str, claims: dict = Depends(require_auth)):
+    result = _owned_run(run_id, claims["sub"])
     explanation = result["explanations"].get(loc_id)
     if not explanation:
         raise HTTPException(404, "Unknown loc_id")
@@ -175,6 +196,6 @@ def explain_location(run_id: str, loc_id: str):
     return {"location": location, **explanation}
 
 
-@app.get("/api/audit")
-def audit(limit: int = 40):
-    return {"ledger": read_ledger(limit), "chain": verify_chain()}
+@app.get("/api/audit", dependencies=[Depends(require_auth)])
+def audit(limit: int = Query(40, ge=1, le=200), claims: dict = Depends(require_auth)):
+    return {"ledger": read_ledger(limit, owner_id=claims["sub"]), "chain": verify_chain()}

@@ -19,7 +19,7 @@ def apply_drainage_correction(
     enabled: bool,
     parameters: dict | None = None,
 ) -> tuple[pd.DataFrame, dict]:
-    """Increase proxy scores near drainage-driven misses. This changes modelled loss."""
+    """Apply an unvalidated sensitivity centred on proxy-missed hotspot points."""
     params = parameters or load_parameters()
     frame = exposure.copy()
     names = scenario_order(params)
@@ -28,7 +28,8 @@ def apply_drainage_correction(
         "missed_hotspots": [],
         "buildings_uplifted": 0,
         "mean_uplift_common": 0.0,
-        "method": "Deterministic distance kernel around named hotspots missed by the common proxy raster; hotspot coordinates are approximate.",
+        "validation_status": "unvalidated sensitivity",
+        "method": "Deterministic distance kernel around named hotspots missed by the common proxy raster; hotspot coordinates are approximate. These same centres cannot independently validate predictive accuracy.",
     }
     if not enabled:
         frame["drainage_uplift"] = 0.0

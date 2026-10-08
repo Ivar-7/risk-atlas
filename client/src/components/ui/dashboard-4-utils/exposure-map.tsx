@@ -14,7 +14,10 @@ function locationPopup(location: LocationRow, scenario: Scenario): HTMLElement {
   content.append(title)
   for (const detail of [
     clsLabel(location.housing_class),
-    `Modelled loss: ${money(scenarioLoss(location, scenario.tier))}`,
+    `Ground-up loss: ${money(location.ground_up_scenario_losses_kes[scenario.tier])}`,
+    `Gross insured loss: ${money(scenarioLoss(location, scenario.tier))}`,
+    `Assumed deductible: ${money(location.deductible_kes)}`,
+    `Assumed policy limit: ${money(location.policy_limit_kes)}`,
     `Insured value: ${money(location.tiv_kes)}`,
     `Proxy score: ${scenarioHazard(location, scenario.tier).toFixed(3)}`,
   ]) {
@@ -119,11 +122,11 @@ export function ExposureMap({ run, scenario }: {
         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-success" /> Named centre detected</span>
         <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-danger" /> Named centre missed</span>
         <span className="flex items-center gap-2"><span className="h-2 w-8 rounded-sm" style={{ backgroundImage: `linear-gradient(to right, ${chartTheme.sequential.join(', ')})` }} /> Proxy susceptibility</span>
-        <span>Marker opacity indicates modelled loss</span>
+        <span>Marker opacity indicates gross insured payout</span>
       </div>
       <div className="mt-6 grid gap-5 xl:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4"><h3 className="text-sm font-semibold">Hotspot check</h3><p className="mt-2 text-2xl font-semibold text-text">{run.hazard_validation.detected_common} / {run.hazard_validation.checked}</p><p className="mt-1 text-xs leading-5 text-text-muted">Named centres detected by the common proxy raster. The county named {run.hazard_validation.county_named} areas; coordinates are available for {run.hazard_validation.checked}. {run.hazard_validation.coordinate_method}</p><div className="mt-3 flex flex-wrap gap-1.5">{run.hotspots.filter((item) => !item.proxy_detected_common).map((item) => <span key={item.name} className="rounded-full bg-danger-tint px-2 py-1 text-[11px] text-danger">{item.name}</span>)}</div></div>
-        <div className="rounded-lg border border-border bg-surface p-4"><h3 className="text-sm font-semibold">Accumulation near named centres</h3><p className="mt-1 text-xs leading-5 text-text-muted">Sample locations within 1.5 km of an approximate hotspot centre. Select a row to filter the map. Values outside those circles stay separate.</p><div className="mt-3 max-h-64 overflow-y-auto"><table className="w-full text-left text-xs"><thead><tr><th className="py-2">Area</th><th className="text-right">TIV</th><th className="text-right">{scenarioLabel(scenario)} loss</th></tr></thead><tbody>{rankedAreas.map((row) => <tr key={row.name} onClick={() => setSelectedArea((current) => current === row.name ? null : row.name)} className={`cursor-pointer ${selectedArea === row.name ? 'text-brand-navy' : 'text-text'}`}><td className="py-2">{row.name} <span className="text-text-muted">({row.locations})</span></td><td className="text-right tabular-nums">{money(row.tiv)}</td><td className="text-right tabular-nums">{money(row.loss)}</td></tr>)}</tbody></table></div>{selectedArea && <button type="button" onClick={() => setSelectedArea(null)} className="mt-2 text-xs text-accent underline">Show all locations</button>}</div>
+        <div className="rounded-lg border border-border bg-surface p-4"><h3 className="text-sm font-semibold">Accumulation near named centres</h3><p className="mt-1 text-xs leading-5 text-text-muted">Sample locations within 1.5 km of an approximate hotspot centre. Loss is gross insured payout. Select a row to filter the map. Values outside those circles stay separate.</p><div className="mt-3 max-h-64 overflow-y-auto"><table className="w-full text-left text-xs"><thead><tr><th className="py-2">Area</th><th className="text-right">TIV</th><th className="text-right">{scenarioLabel(scenario)} gross</th></tr></thead><tbody>{rankedAreas.map((row) => <tr key={row.name} onClick={() => setSelectedArea((current) => current === row.name ? null : row.name)} className={`cursor-pointer ${selectedArea === row.name ? 'text-brand-navy' : 'text-text'}`}><td className="py-2">{row.name} <span className="text-text-muted">({row.locations})</span></td><td className="text-right tabular-nums">{money(row.tiv)}</td><td className="text-right tabular-nums">{money(row.loss)}</td></tr>)}</tbody></table></div>{selectedArea && <button type="button" onClick={() => setSelectedArea(null)} className="mt-2 text-xs text-accent underline">Show all locations</button>}</div>
       </div>
     </Panel>
   )

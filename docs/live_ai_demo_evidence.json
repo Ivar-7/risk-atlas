@@ -1,0 +1,55 @@
+{
+  "performed_at_utc": "2026-10-08T13:30:26.554924+00:00",
+  "mode": "live OpenAI extraction; local API preview and reviewed run; persistence mocked to avoid a demo record in the configured database",
+  "offer": "Synthetic residential offer for a Nairobi flood CAT demonstration. The schedule contains 25 informal iron-sheet houses in Kibera. Each building has an insured value of KES 800,000.",
+  "preview": {
+    "source": "openai",
+    "model": "gpt-6-luna",
+    "response_id": "resp_087a5f3c1c2353cf006ac79aef5de487d2bb57d262d0b340e1",
+    "groups": [
+      {
+        "count": 25,
+        "housing_class": "informal_iron_sheet",
+        "place": "Kibera",
+        "tiv_each_kes": 800000,
+        "total_tiv_kes": 20000000
+      }
+    ],
+    "rows_added": 25,
+    "total_tiv_kes": 20000000
+  },
+  "reviewed": {
+    "source": "openai",
+    "model": "gpt-6-luna",
+    "response_id": "resp_087a5f3c1c2353cf006ac79aef5de487d2bb57d262d0b340e1",
+    "reviewed": true,
+    "reviewed_at": "2026-10-08T13:30:25.604255+00:00"
+  },
+  "comparison": {
+    "basis": "Same starter portfolio, drainage setting, hazard, vulnerability and property terms; only the reviewed synthetic rows differ.",
+    "without_added": {
+      "locations": 600,
+      "total_tiv_kes": 6363470000.0,
+      "aal_kes": 34533345.23082411,
+      "scenarios": {
+        "extreme": 46750243.60131322,
+        "severe": 81373320.50750187,
+        "moderate": 189530838.70817327,
+        "occasional": 318997699.54119515,
+        "common": 491907329.2773625
+      }
+    },
+    "with_added": {
+      "locations": 625,
+      "total_tiv_kes": 6383470000.0,
+      "aal_kes": 34616022.99368572,
+      "scenarios": {
+        "extreme": 46772252.64280735,
+        "severe": 81857826.3867133,
+        "moderate": 190476138.12798166,
+        "occasional": 320766223.18528783,
+        "common": 495393830.3239485
+      }
+    }
+  }
+}

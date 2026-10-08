@@ -34,6 +34,7 @@ def append_run(result: dict[str, Any]) -> dict[str, Any]:
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     record = {
         "run_id": result["run_id"],
+        "owner_id": result.get("owner_id"),
         "created_at": result["created_at"],
         "model_version": result["model"]["version"],
         "controls": result["controls"],
@@ -50,14 +51,16 @@ def append_run(result: dict[str, Any]) -> dict[str, Any]:
     return record
 
 
-def read_ledger(limit: int = 50) -> list[dict[str, Any]]:
+def read_ledger(limit: int = 50, owner_id: str | None = None) -> list[dict[str, Any]]:
     if not LEDGER_PATH.exists():
         return []
     rows = []
     with LEDGER_PATH.open(encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
-                rows.append(json.loads(line))
+                row = json.loads(line)
+                if owner_id is None or row.get("owner_id") == owner_id:
+                    rows.append(row)
     return list(reversed(rows[-limit:]))
 
 
