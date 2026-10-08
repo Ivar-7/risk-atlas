@@ -11,7 +11,8 @@ export async function authorizedModelFetch(path: string, init?: RequestInit): Pr
   if (!token) throw new Error('Sign in to access the model API')
   const headers = new Headers(init?.headers)
   headers.set('Authorization', `Bearer ${token}`)
-  return fetch(path, {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ?? ''
+  return fetch(`${apiBaseUrl}${path}`, {
     ...init,
     headers,
   })
