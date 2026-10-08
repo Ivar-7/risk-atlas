@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   Activity, ArrowLeft, BrainCircuit, ChevronDown, ChevronRight, Info, Layers3,
-  LayoutDashboard, MapPinned, Search, ShieldCheck, Waves, X,
+  LayoutDashboard, MapPinned, Search, ShieldCheck, Waves,
 } from 'lucide-react'
 import type { RunResult } from '../../features/model/types'
 
@@ -23,7 +23,6 @@ type Props = {
   run: RunResult | null
   onNavigate: (id: DashboardSectionId) => void
   onSearch: () => void
-  onClose: () => void
 }
 
 function NavLink({ id, activeId, onNavigate, children, badge }: {
@@ -63,9 +62,9 @@ function NavGroup({ title, children, defaultOpen = true }: { title: string; chil
   </div>
 }
 
-export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose }: Props) {
+export function DashboardSidebar({ activeId, run, onNavigate, onSearch }: Props) {
   const [switcherOpen, setSwitcherOpen] = useState(false)
-  const navigate = (id: DashboardSectionId) => { onNavigate(id); onClose() }
+  const navigate = (id: DashboardSectionId) => onNavigate(id)
 
   return <div className="flex h-full w-65 flex-col border-r border-border bg-surface p-3 font-sans">
     <div className="relative mb-4">
@@ -76,7 +75,6 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose 
           </span>
           <ChevronDown size={16} className="shrink-0 text-muted-foreground/60" strokeWidth={1.5} />
         </button>
-        <button type="button" onClick={onClose} aria-label="Close sidebar" className="rounded-md p-2 text-text-muted hover:bg-surface-alt hover:text-text lg:hidden"><X size={17} /></button>
       </div>
       {switcherOpen && <div className="absolute inset-x-0 top-13.5 z-50 rounded-lg border border-border bg-card p-1 shadow-xl">
         <a href="#overview" onClick={(event) => { event.preventDefault(); setSwitcherOpen(false); navigate('overview') }} className="block rounded-md bg-surface-alt px-3 py-2 text-sm font-semibold text-brand-navy">Dashboard overview</a>
@@ -86,7 +84,11 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose 
 
     <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto" aria-label="Dashboard navigation">
       <div className="space-y-0.5">
+<<<<<<< HEAD
         <button type="button" onClick={() => { onSearch(); onClose() }} className="group flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text"><Search size={16} strokeWidth={1.5} /> <span className="flex-1">Search</span><kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-text-muted group-hover:inline-flex">⌘K</kbd></button>
+=======
+        <button type="button" onClick={onSearch} className="group flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text"><Search size={16} strokeWidth={1.5} /> <span className="flex-1">Search</span><kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-text-muted group-hover:inline-flex">⌘K</kbd></button>
+>>>>>>> 3534be7 (Font changes and UI)
         <NavLink id="overview" activeId={activeId} onNavigate={navigate} />
       </div>
       <NavGroup title="Analysis">

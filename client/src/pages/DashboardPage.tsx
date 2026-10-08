@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { UserButton, useUser } from '@clerk/react'
 import { BarChart3, PanelLeftClose, PanelLeftOpen, RefreshCw, Search, X } from 'lucide-react'
 import Dashboard from '../components/ui/dashboard-4'
+import FloatingNav from '../components/ui/floating-nav'
 import { validateDashboardRun } from '../components/ui/dashboard-4-utils/model'
 import { DashboardSidebar, dashboardSections, type DashboardSectionId } from '../components/ui/dashboard-sidebar'
 import DashboardLoader from '../components/ui/v-skeleton-8'
@@ -11,7 +12,7 @@ import { money } from '../features/model/format'
 import type { RunResult } from '../features/model/types'
 
 const sectionDescriptions: Record<DashboardSectionId, string> = {
-  overview: 'A concise view of the latest backend model run and portfolio loss.',
+  overview: 'A concise view of the latest model run and portfolio loss.',
   'loss-curve': 'Compare gross loss across the model’s assumed return periods.',
   'hazard-proxy': 'See how many portfolio locations have modelled loss at each proxy tier.',
   'exposure-map': 'Explore modelled locations and named hotspots on OpenStreetMap.',
@@ -28,7 +29,6 @@ function timeGreeting() {
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileOpen, setMobileOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<DashboardSectionId>('overview')
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -88,7 +88,6 @@ export default function DashboardPage() {
   const navigateSection = (id: DashboardSectionId) => {
     if (window.location.hash !== `#${id}`) window.history.pushState(null, '', `#${id}`)
     setActiveSection(id)
-    setMobileOpen(false)
     setSearchOpen(false)
     setSearchTerm('')
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -99,13 +98,11 @@ export default function DashboardPage() {
   if (loading && !run) return <DashboardLoader />
 
   return <div className={`dashboard-theme min-h-screen bg-bg font-sans text-text ${sidebarOpen ? 'lg:grid lg:grid-cols-[260px_minmax(0,1fr)]' : ''}`}>
-    {sidebarOpen && <aside className="hidden lg:sticky lg:top-0 lg:block lg:h-screen"><DashboardSidebar activeId={activeSection} run={run} onNavigate={navigateSection} onSearch={() => setSearchOpen(true)} onClose={() => setMobileOpen(false)} /></aside>}
-    {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" className="absolute inset-0 bg-brand-navy/25" onClick={() => setMobileOpen(false)} aria-label="Close navigation" /><aside className="relative h-full w-[260px] shadow-xl"><DashboardSidebar activeId={activeSection} run={run} onNavigate={navigateSection} onSearch={() => setSearchOpen(true)} onClose={() => setMobileOpen(false)} /></aside></div>}
+    {sidebarOpen && <aside className="hidden lg:sticky lg:top-0 lg:block lg:h-screen"><DashboardSidebar activeId={activeSection} run={run} onNavigate={navigateSection} onSearch={() => setSearchOpen(true)} /></aside>}
 
     <div className="min-w-0 bg-bg">
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-surface px-4 sm:px-6 xl:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open sidebar" className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-alt hover:text-text lg:hidden"><PanelLeftOpen size={18} strokeWidth={1.5} /></button>
           <button type="button" onClick={() => setSidebarOpen((value) => !value)} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'} className="hidden rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-alt hover:text-text lg:inline-flex">{sidebarOpen ? <PanelLeftClose size={18} strokeWidth={1.5} /> : <PanelLeftOpen size={18} strokeWidth={1.5} />}</button>
           <div className="flex min-w-0 items-center gap-2 text-sm"><span className="hidden truncate text-text-muted sm:inline">Risk Atlas</span><span className="hidden text-text-muted/50 sm:inline">/</span><span className="truncate font-medium">{activeTitle}</span></div>
         </div>
@@ -118,20 +115,19 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main id="overview" className="mx-auto max-w-[1600px] scroll-mt-20 px-5 pb-12 pt-7 sm:px-7 xl:px-9">
+      <main id="overview" className="mx-auto max-w-[1600px] scroll-mt-20 px-5 pb-24 pt-7 sm:px-7 lg:pb-12 xl:px-9">
         <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div><p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent">Risk Atlas workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{activeSection === 'overview' ? 'Nairobi flood risk overview' : activeTitle}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{sectionDescriptions[activeSection]}</p></div>
           {run && activeSection !== 'workspace' && <span className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted"><BarChart3 size={15} />{run.scenarios.length} assumed scenarios</span>}
         </div>
 
         {run && activeSection !== 'workspace' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
-          <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Backend model engine</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-3 text-sm text-text-muted">AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations · Run {run.run_id.slice(0, 8)} · {new Date(run.created_at).toLocaleString('en-KE')}</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Model run</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-3 text-sm text-text-muted">AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations</p></div>
           <div className="flex items-center gap-3"><button type="button" onClick={() => void reload()} disabled={loading} className="flex items-center gap-2 rounded-md border border-brand-navy/20 bg-surface px-3 py-2 text-sm text-text hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw size={15} />Refresh</button><button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">Run model</button></div>
         </section>}
-        {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>Model API unavailable: {error}. Start the backend service and retry.</span><button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div>}
+        {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>Dashboard data is temporarily unavailable. Please try again.</span><button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div>}
         {activeSection === 'workspace' && <Suspense fallback={<DashboardLoader />}><ModelWorkspace assessment={assessment} onReviewed={setAssessment} /></Suspense>}
         {run && activeSection !== 'workspace' && <section aria-label={`${activeTitle} dashboard section`}><Dashboard run={run} activeSection={activeSection} /></section>}
-        {run && activeSection !== 'workspace' && <p className="mt-6 text-[11px] leading-5 text-text-muted">Source: current model API run over the configured exposure CSV and hazard proxy. {run.metrics.synthetic_locations} of {run.metrics.locations} locations are sample exposure records. OpenStreetMap provides the basemap.</p>}
       </main>
     </div>
 
@@ -141,5 +137,6 @@ export default function DashboardPage() {
         <div className="max-h-[50vh] overflow-y-auto p-2">{searchResults.length ? searchResults.map((section) => { const Icon = section.icon; return <a key={section.id} href={`#${section.id}`} onClick={(event) => { event.preventDefault(); navigateSection(section.id) }} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-text hover:bg-surface-alt"><Icon size={17} strokeWidth={1.5} />{section.label}</a> }) : <p className="px-3 py-6 text-center text-sm text-text-muted">No matching dashboard section</p>}</div>
       </section>
     </div>}
+    <FloatingNav activeId={activeSection} onNavigate={navigateSection} />
   </div>
 }
