@@ -2,23 +2,25 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+import os
+from time import perf_counter
 from typing import Any
 from uuid import uuid4
-import os
-
-import psycopg
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.auth import SESSION_DAYS, authenticate, create_session, delete_session, register_user, session_user
 from app.audit.ledger import append_run, read_ledger, verify_chain
+from app.clerk_auth import require_auth
 from app.database import configured as database_configured, initialize as initialize_database, load_latest_run, load_run, save_run
 from app.engine.config_load import load_assumptions, load_parameters
 from app.engine.ingestion import IngestedData, load_portfolio
 from app.engine.pipeline import run_model
 from app.engine.exposure_preview import ai_available, preview_exposure
 from app.engine.vulnerability import vulnerability_matrix
-from app.schemas import LoginRequest, PreviewRequest, RegisterRequest, RunRequest
+from app.engine.document_review import MAX_BYTES, review_document
+from app.engine.loss_terms import LossTerms, calculate_loss
+from app.schemas import PreviewRequest, RunRequest
 
 STORE: dict[str, dict[str, Any]] = {}
 PREVIEWS: dict[str, dict[str, Any]] = {}
@@ -44,9 +46,17 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Risk Atlas API", version="1.0.0", lifespan=lifespan)
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "RISK_ATLAS_CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -57,66 +67,7 @@ def health():
     return {"status": "ok", "locations": PORTFOLIO.row_count if PORTFOLIO else 0, "latest_run_id": LATEST, "database_configured": database_configured()}
 
 
-def _require_database() -> None:
-    if not database_configured():
-        raise HTTPException(503, "Account database is not configured")
-
-
-def _session_cookie(response: Response, request: Request, token: str) -> None:
-    secure = request.url.scheme == "https" or os.getenv("RISK_ATLAS_SECURE_COOKIES", "").lower() == "true"
-    response.set_cookie(
-        "risk_atlas_session", token, max_age=SESSION_DAYS * 86400, httponly=True,
-        secure=secure, samesite="lax", path="/",
-    )
-
-
-@app.post("/api/auth/register", status_code=201)
-def register(body: RegisterRequest, request: Request, response: Response):
-    _require_database()
-    try:
-        user = register_user(body.full_name, str(body.email), body.password)
-        if user is None:
-            raise HTTPException(409, "An account with this email already exists")
-        _session_cookie(response, request, create_session(user["id"]))
-        return {"user": user}
-    except psycopg.Error as exc:
-        raise HTTPException(503, "Account database is unavailable") from exc
-
-
-@app.post("/api/auth/login")
-def login(body: LoginRequest, request: Request, response: Response):
-    _require_database()
-    try:
-        user = authenticate(str(body.email), body.password)
-        if user is None:
-            raise HTTPException(401, "Invalid email or password")
-        _session_cookie(response, request, create_session(user["id"]))
-        return {"user": user}
-    except psycopg.Error as exc:
-        raise HTTPException(503, "Account database is unavailable") from exc
-
-
-@app.get("/api/auth/me")
-def current_user(request: Request):
-    _require_database()
-    try:
-        return {"user": session_user(request.cookies.get("risk_atlas_session"))}
-    except psycopg.Error as exc:
-        raise HTTPException(503, "Account database is unavailable") from exc
-
-
-@app.post("/api/auth/logout")
-def logout(request: Request, response: Response):
-    if database_configured():
-        try:
-            delete_session(request.cookies.get("risk_atlas_session"))
-        except psycopg.Error as exc:
-            raise HTTPException(503, "Account database is unavailable") from exc
-    response.delete_cookie("risk_atlas_session", path="/")
-    return {"ok": True}
-
-
-@app.get("/api/defaults")
+@app.get("/api/defaults", dependencies=[Depends(require_auth)])
 def defaults():
     params = load_parameters()
     return {
@@ -129,12 +80,31 @@ def defaults():
     }
 
 
-@app.get("/api/capabilities")
+@app.get("/api/capabilities", dependencies=[Depends(require_auth)])
 def capabilities():
     return {"ai_exposure_available": ai_available()}
 
 
-@app.post("/api/exposure/preview")
+@app.post('/api/documents/analyze', dependencies=[Depends(require_auth)])
+async def analyze_document(file: UploadFile = File(...)):
+    try:
+        started = perf_counter()
+        data = await file.read(MAX_BYTES + 1)
+        result = review_document(file.filename or '', data)
+        result['processing_ms'] = round((perf_counter() - started) * 1000)
+        return result
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    finally:
+        await file.close()
+
+
+@app.post('/api/loss/calculate', dependencies=[Depends(require_auth)])
+def calculate_document_loss(terms: LossTerms):
+    return {key: str(value) if isinstance(value, Decimal) else value for key, value in calculate_loss(terms).items()}
+
+
+@app.post("/api/exposure/preview", dependencies=[Depends(require_auth)])
 def preview(body: PreviewRequest):
     try:
         result = preview_exposure(body.free_text, PORTFOLIO.hotspots)
@@ -149,7 +119,7 @@ def preview(body: PreviewRequest):
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.post("/api/runs")
+@app.post("/api/runs", dependencies=[Depends(require_auth)])
 def create_run(body: RunRequest):
     global LATEST
     try:
@@ -169,8 +139,8 @@ def create_run(body: RunRequest):
         result = run_model(payload, ingested=PORTFOLIO)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    STORE[result["run_id"]] = result
     save_run(result)
+    STORE[result["run_id"]] = result
     record = append_run(result)
     LATEST = result["run_id"]
     payload = _public(result)
@@ -178,7 +148,7 @@ def create_run(body: RunRequest):
     return payload
 
 
-@app.get("/api/runs/latest")
+@app.get("/api/runs/latest", dependencies=[Depends(require_auth)])
 def latest_run():
     result = STORE.get(LATEST or "") or load_latest_run()
     if not result:
@@ -186,7 +156,7 @@ def latest_run():
     return _public(result)
 
 
-@app.get("/api/runs/{run_id}")
+@app.get("/api/runs/{run_id}", dependencies=[Depends(require_auth)])
 def get_run(run_id: str):
     result = STORE.get(run_id) or load_run(run_id)
     if not result:
@@ -194,7 +164,7 @@ def get_run(run_id: str):
     return _public(result)
 
 
-@app.get("/api/runs/{run_id}/explain/{loc_id}")
+@app.get("/api/runs/{run_id}/explain/{loc_id}", dependencies=[Depends(require_auth)])
 def explain_location(run_id: str, loc_id: str):
     result = STORE.get(run_id) or load_run(run_id)
     if not result:
@@ -206,6 +176,6 @@ def explain_location(run_id: str, loc_id: str):
     return {"location": location, **explanation}
 
 
-@app.get("/api/audit")
+@app.get("/api/audit", dependencies=[Depends(require_auth)])
 def audit(limit: int = 40):
     return {"ledger": read_ledger(limit), "chain": verify_chain()}

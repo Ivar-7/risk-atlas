@@ -1,5 +1,5 @@
-import RegisterPage1 from '../components/ui/register-page-1'
+import { ClerkAuthPage } from '../components/ui/clerk-auth-page'
 
 export default function RegisterPage() {
-  return <RegisterPage1 />
+  return <ClerkAuthPage mode="register" />
 }

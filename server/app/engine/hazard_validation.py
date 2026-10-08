@@ -29,6 +29,13 @@ def proxy_score(lat: float, lon: float, tier: str) -> float:
     return max(0.0, float(image.getpixel((x, y))))
 
 
+def proxy_point_covered(lat: float, lon: float) -> bool:
+    image, west, north, pixel_width, pixel_height = _raster('common')
+    x = int((lon - west) / pixel_width)
+    y = int((north - lat) / pixel_height)
+    return 0 <= x < image.width and 0 <= y < image.height
+
+
 def hotspot_validation(hotspots) -> dict:
     rows = []
     for _, row in hotspots.iterrows():

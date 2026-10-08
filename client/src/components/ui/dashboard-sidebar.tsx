@@ -13,6 +13,7 @@ export const dashboardSections = [
   { id: 'construction', label: 'Construction', icon: Layers3 },
   { id: 'ai-evidence', label: 'AI evidence', icon: BrainCircuit },
   { id: 'assumptions', label: 'Assumptions', icon: Info },
+  { id: 'workspace', label: 'Model workspace', icon: ShieldCheck },
 ] as const
 
 export type DashboardSectionId = (typeof dashboardSections)[number]['id']
@@ -80,7 +81,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose 
       </div>
       {switcherOpen && <div className="absolute inset-x-0 top-[54px] z-50 rounded-lg border border-border bg-card p-1 shadow-xl">
         <a href="#overview" onClick={(event) => { event.preventDefault(); setSwitcherOpen(false); navigate('overview') }} className="block rounded-md bg-primary/10 px-3 py-2 text-[13px] text-primary">Dashboard overview</a>
-        <a href="/app/" className="mt-0.5 block rounded-md px-3 py-2 text-[13px] text-foreground/80 hover:bg-white/5">Model workspace</a>
+        <a href="#workspace" onClick={(event) => { event.preventDefault(); setSwitcherOpen(false); navigate('workspace') }} className="mt-0.5 block rounded-md px-3 py-2 text-[13px] text-foreground/80 hover:bg-white/5">Model workspace</a>
       </div>}
     </div>
 
@@ -100,7 +101,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch, onClose 
       <NavGroup title="Workspace">
         <NavLink id="ai-evidence" activeId={activeId} onNavigate={navigate} />
         <NavLink id="assumptions" activeId={activeId} onNavigate={navigate} />
-        <a href="/app/" className="flex min-h-9 items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] tracking-wide text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"><ShieldCheck size={16} strokeWidth={1.5} /> Run model</a>
+        <NavLink id="workspace" activeId={activeId} onNavigate={navigate} />
       </NavGroup>
     </nav>
 

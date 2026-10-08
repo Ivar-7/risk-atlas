@@ -1,5 +1,5 @@
-import LoginPage1 from '../components/ui/login-page-1'
+import { ClerkAuthPage } from '../components/ui/clerk-auth-page'
 
 export default function LoginPage() {
-  return <LoginPage1 />
+  return <ClerkAuthPage mode="login" />
 }

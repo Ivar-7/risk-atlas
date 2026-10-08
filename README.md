@@ -10,24 +10,26 @@ Start the model API from the repository root:
 python -m venv server/.venv
 server/.venv/bin/pip install -r server/requirements.txt
 cp .env.example .env
-# Add your Neon pooled DATABASE_URL to .env
+# Add your Neon pooled DATABASE_URL and Clerk secret key to .env
 PYTHONPATH=server server/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
 In Neon, open the `risk-atlas` project, select the `production` branch, and
 copy its pooled PostgreSQL connection string from **Connect**. Set that string
 as `DATABASE_URL` in the root `.env` file. The backend loads `.env`, requires
-TLS for database connections, and creates `app_users`, `auth_sessions`, and
-`model_runs` on startup. Never put the connection string in `client/` or a
-`VITE_*` variable. When deployed behind an HTTPS reverse proxy, set
-`RISK_ATLAS_SECURE_COOKIES=true`. The server needs its own persistent process;
-Vite only proxies `/api` during local development.
+TLS for database connections, and creates the `model_runs` table on startup.
+Model runs can then be fetched by ID after an API restart. Never put the
+connection string in `client/` or a `VITE_*` variable. The server needs its own
+persistent process; Vite only proxies `/api` during local development.
 
-Registration and sign-in use Argon2 password hashes and HTTP-only session
-cookies. Model runs are saved in Neon and can be fetched by ID after an API
-restart. The sample dashboard remains publicly viewable, while account actions
-require the database. Without `DATABASE_URL`, model preview endpoints still
-work, but registration and sign-in return a configuration error.
+Clerk owns sign-in, sign-up, verification, and profile management. Put the
+publishable key in `client/.env.local` as `VITE_CLERK_PUBLISHABLE_KEY`, and set
+`CLERK_SECRET_KEY` in the backend `.env`. Set `CLERK_AUTHORIZED_PARTIES` to the
+exact frontend origins allowed to call the API (including production).
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is for Next.js and is not read by Vite.
+The dashboard and model workspace require a Clerk session; the API verifies
+that session before serving model data. Without `DATABASE_URL`, model runs
+remain available only for the current server process.
 
 In another terminal, start the frontend:
 
@@ -37,9 +39,13 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/dashboard/` for the live API-backed overview or
-`http://localhost:5173/app/` for live model runs, exposure review, explanations,
-and the audit ledger. Vite proxies `/api` to port 8000. Production hosting
+Open `http://localhost:5173/dashboard/` for the live API-backed overview. The
+dashboard sidebar contains the model workspace, document review, explanations,
+and the audit ledger. The old `/app/` path redirects to the workspace tab.
+The document review tab accepts text PDFs and `.docx` files, and includes the
+supplied PDF and Word offer as sample inputs. It shows extracted source evidence,
+the location proxy, and checks for the underwriter; it does not calculate a
+commercial property loss or make a final decision. Vite proxies `/api` to port 8000. Production hosting
 must route `/api` to the FastAPI service on the same origin. The dashboard
 requires that service; it does not display bundled fallback results. Its map
 uses OpenStreetMap tiles and needs network access.
@@ -81,6 +87,37 @@ hazard and vulnerability assumptions.
 - `data/`    small sample datasets only
 - `docs/`    API contract and modelling assumptions
 - `config/` model parameters and assumptions register
+
+## Deploy the API to Heroku
+
+Deploy this repository's **root**, not just `server/`. The root `requirements.txt`
+lets Heroku detect Python, while `Procfile` starts Uvicorn with `server/` as the
+app directory. Keeping the repository root also makes the API's `config/` and
+`data/` paths resolve correctly.
+
+1. Push the repository to GitHub and create a Heroku app.
+2. In the Heroku Dashboard, open the app's **Deploy** tab, find **Deployment
+	method**, choose **GitHub**, connect the repository, and select the branch
+	containing these files. Do not choose a subdirectory; the GitHub integration
+	deploys the repository root.
+3. On the app's **Settings** tab, select **Reveal Config Vars** and add:
+	`CLERK_SECRET_KEY`, `CLERK_AUTHORIZED_PARTIES` (comma-separated frontend
+	origins), and `RISK_ATLAS_CORS_ORIGINS` (the same origins, comma-separated).
+	Add `DATABASE_URL` using your PostgreSQL connection string if runs must
+	persist across dyno restarts. Set `OPENAI_API_KEY` only if model-backed
+	exposure extraction is required. Keep all secret values out of Git.
+4. Return to **Deploy** and click **Deploy Branch**. For a Git-connected app,
+	Heroku will build the root `requirements.txt` and use the root `Procfile`.
+5. In **More** > **View logs**, confirm the release starts. Open
+	`https://<your-app-name>.herokuapp.com/api/health`; a healthy API returns
+	`{"status":"ok",...}`. Swagger docs are at `/docs`.
+
+If automatic detection still fails, open **Settings** > **Buildpacks** >
+**Add buildpack**, select `heroku/python`, and save. The normal fix is having
+the root `requirements.txt`; there is no GitHub deploy setting for a server
+subdirectory. The deployed API requires a frontend origin in both Clerk's
+`CLERK_AUTHORIZED_PARTIES` and `RISK_ATLAS_CORS_ORIGINS` before browser requests
+will work.
 
 ## Run backend
 
