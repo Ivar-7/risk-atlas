@@ -1,8 +1,8 @@
 const housingClasses: Record<string, string> = {
-  informal_iron_sheet: 'var(--color-brand-navy)',
-  semi_permanent: 'var(--color-accent)',
+  informal_iron_sheet: 'var(--color-danger)',
+  semi_permanent: '#c46d19',
   permanent_masonry: 'var(--color-steel-blue)',
-  concrete_rcc: 'var(--color-brand-grey)',
+  concrete_rcc: 'var(--color-success)',
 }
 
 export const chartTheme = {

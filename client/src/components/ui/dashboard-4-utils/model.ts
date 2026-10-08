@@ -13,6 +13,9 @@ export function validateDashboardRun(run: RunResult): void {
   if (!Number.isFinite(run.metrics?.ground_up_aal_kes) || !Number.isFinite(run.controls?.deductible_pct) || !Number.isFinite(run.controls?.policy_limit_pct)) {
     throw new Error('The model API is missing ground-up loss or policy terms')
   }
+  if (!Array.isArray(run.vulnerability_matrix) || run.vulnerability_matrix.length === 0 || run.vulnerability_matrix.some((row) => !Array.isArray(row.by_hazard_score) || row.by_hazard_score.length === 0 || row.by_hazard_score.some((point) => !Number.isFinite(point.score) || !Number.isFinite(point.damage_ratio)))) {
+    throw new Error('The model API is missing vulnerability chart values; restart the updated backend')
+  }
   if (!Number.isFinite(run.hazard_validation?.detected_common) || !Array.isArray(run.sensitivity?.depth_scale) || !Array.isArray(run.sensitivity?.return_periods)) {
     throw new Error('The model API is missing hotspot validation or assumption sensitivity; restart the updated backend')
   }

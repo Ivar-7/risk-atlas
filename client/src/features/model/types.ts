@@ -84,6 +84,7 @@ export type RunResult = {
     depth_multiplier: number;
     differs_from_jrc: string;
     by_depth_m: Record<string, number>;
+    by_hazard_score: Array<{ score: number; damage_ratio: number }>;
   }>;
   sensitivity: {
     depth_scale: Array<{ depth_scale_m: number; loss_1_in_100_kes: number; aal_kes: number }>;
