@@ -84,11 +84,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch }: Props)
 
     <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto" aria-label="Dashboard navigation">
       <div className="space-y-0.5">
-<<<<<<< HEAD
-        <button type="button" onClick={() => { onSearch(); onClose() }} className="group flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt hover:text-text"><Search size={16} strokeWidth={1.5} /> <span className="flex-1">Search</span><kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-text-muted group-hover:inline-flex">⌘K</kbd></button>
-=======
         <button type="button" onClick={onSearch} className="group flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text"><Search size={16} strokeWidth={1.5} /> <span className="flex-1">Search</span><kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-text-muted group-hover:inline-flex">⌘K</kbd></button>
->>>>>>> 3534be7 (Font changes and UI)
         <NavLink id="overview" activeId={activeId} onNavigate={navigate} />
       </div>
       <NavGroup title="Analysis">
