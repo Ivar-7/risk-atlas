@@ -12,6 +12,15 @@ server/.venv/bin/pip install -r server/requirements.txt
 PYTHONPATH=server server/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
+On Windows PowerShell, use:
+
+```powershell
+python -m venv server\.venv
+server\.venv\Scripts\python.exe -m pip install -r server\requirements.txt
+$env:PYTHONPATH = "server"
+server\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+```
+
 Local environment files are `server/.env` and `client/.env`. For a fresh
 checkout, copy each folder's `.env.example` once and fill in local values.
 Never commit either `.env` file.
