@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ArrowRight, Download, ShieldAlert } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Download, ShieldAlert, Volume2 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { RunResult } from '../../features/model/types'
 import { submittedExposure } from '../../features/model/submittedExposure'
@@ -14,6 +14,8 @@ const fullKes = (value: number) => `KES ${new Intl.NumberFormat('en-KE', { maxim
 
 export function SubmittedExposureSummary({ run, onNavigate }: { run: RunResult; onNavigate: (id: DashboardSectionId) => void }) {
   const [selectedTier, setSelectedTier] = useState<string | null>(null)
+  const [speaking, setSpeaking] = useState(false)
+  useEffect(() => () => { if ('speechSynthesis' in window) window.speechSynthesis.cancel() }, [])
   const submitted = submittedExposure(run)
   const groups = run.exposure_review?.groups ?? run.interventions.free_text.groups ?? []
   const scenarios = [...run.scenarios].sort((a, b) => a.return_period_years - b.return_period_years)
@@ -29,6 +31,20 @@ export function SubmittedExposureSummary({ run, onNavigate }: { run: RunResult; 
   const affectedValue = submitted.scenarios[scenario.tier].affected_tiv_kes
   const loss100 = scenarios.find((item) => item.return_period_years === 100)
   const loss250 = scenarios.find((item) => item.return_period_years === 250)
+  const speechAvailable = typeof window !== 'undefined' && 'speechSynthesis' in window
+  const speakResult = () => {
+    if (!speechAvailable) return
+    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return }
+    const script = `${locations.length} submitted buildings with ${money(submitted.total_tiv_kes)} insured value. The assumed 1 in 100 year gross loss is ${loss100 ? money(loss(loss100.tier)) : 'unavailable'}. These are illustrative model results from synthetic exposure and a flood hazard proxy.`
+    const utterance = new SpeechSynthesisUtterance(script)
+    utterance.lang = 'en-KE'
+    utterance.rate = 0.95
+    utterance.onend = () => setSpeaking(false)
+    utterance.onerror = () => setSpeaking(false)
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+    setSpeaking(true)
+  }
   const classes = [...new Set(locations.map((location) => location.housing_class))].map((name) => ({
     name, count: locations.filter((location) => location.housing_class === name).length,
     tiv: sum((location) => location.housing_class === name ? location.tiv_kes : 0),
@@ -62,7 +78,7 @@ export function SubmittedExposureSummary({ run, onNavigate }: { run: RunResult; 
     <section className="rounded-xl bg-brand-navy p-6 text-white shadow-dashboard sm:p-8" aria-label="Submitted exposure readout">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">Submitted exposure · illustrative</p><h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{locations.length} added {locations.length === 1 ? 'building' : 'buildings'}</h2><p className="mt-2 text-sm text-white/75">{groups.length ? groups.map((group) => `${group.count} ${clsLabel(group.housing_class)} in ${group.place}`).join(' · ') : `Near ${places.join(', ')}`}</p><p className="mt-3 text-xs text-white/60">Run {run.run_id.slice(0, 8)} · {runTime} EAT</p></div>
-        <button type="button" onClick={() => downloadScenario(run, scenario, locations, 'submitted')} className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"><Download size={15} /> Export these {locations.length} buildings</button>
+        <div className="flex flex-wrap gap-2">{speechAvailable && <button type="button" onClick={speakResult} className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"><Volume2 size={15} /> {speaking ? 'Stop readout' : 'Listen to result'}</button>}<button type="button" onClick={() => downloadScenario(run, scenario, locations, 'submitted')} className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"><Download size={15} /> Export these {locations.length} buildings</button></div>
       </div>
       <div className="mt-7 grid gap-5 border-t border-white/20 pt-6 sm:grid-cols-4">
         <div><p className="text-xs text-white/65">Submitted insured value</p><p className="mt-2 text-xl font-semibold tabular-nums">{money(submitted.total_tiv_kes)}</p></div>

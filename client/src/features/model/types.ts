@@ -15,7 +15,7 @@ export type Controls = {
 };
 
 export type ExposureGroup = { count: number; housing_class: string; place: string; tiv_each_kes: number; total_tiv_kes: number };
-export type ExposurePreview = { preview_id: string; source: 'none' | 'rules' | 'openai'; model?: string; response_id?: string; groups: ExposureGroup[]; notes: string[]; rows_added: number; total_tiv_kes: number };
+export type ExposurePreview = { preview_id: string; source: 'none' | 'rules' | 'openai' | 'gemini'; model?: string; response_id?: string; groups: ExposureGroup[]; notes: string[]; rows_added: number; total_tiv_kes: number };
 export type CoordinateRow = { loc_id: string; place: string; housing_class: string; tiv_kes: number; lat: number; lon: number; coordinate_source: string; address: string };
 export type CoordinatePreview = { coordinate_preview_id: string; filename: string; rows_count: number; rows: CoordinateRow[]; status: string };
 
@@ -97,7 +97,7 @@ export type RunResult = {
     ground_up_aal_kes: number;
     loss_cost_pct: number;
   }>;
-  by_hotspot: Array<{ name?: string; nearest_hotspot?: string; locations: number; tiv_kes: number; aal_kes: number }>;
+  by_hotspot: Array<{ area: string; locations: number; tiv_kes: number; aal_kes: number }>;
   vulnerability_matrix: Array<{
     housing_class: string;
     cap: number;

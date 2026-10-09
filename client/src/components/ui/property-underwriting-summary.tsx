@@ -20,6 +20,8 @@ export function PropertyUnderwritingSummary({ calculation, onNavigate }: { calcu
   const propertyName = fields.address?.value || fields.insured?.value || assessment.filename
   const floodExcluded = fields.coverage?.value.toLowerCase().includes('excluding flood')
   const allZero = model?.scenarios.every((item) => item.hazard_score === 0)
+  const firstPositiveScenario = model?.scenarios.find((item) => item.hazard_score > 0)
+  const selectedTierHasNoSignal = scenario?.hazard_score === 0 && Boolean(firstPositiveScenario)
   const conflicts = [
     { label: 'Gross loss', stated: fields.gross_loss?.value, calculated: Number(result.gross_loss_kes) },
     { label: 'Net loss', stated: fields.net_loss?.value, calculated: Number(result.net_loss_kes) },
@@ -52,7 +54,7 @@ export function PropertyUnderwritingSummary({ calculation, onNavigate }: { calcu
         <div><p className="text-xs text-white/65">Gross insured loss</p><p className="mt-2 text-2xl font-semibold tabular-nums">{amount(result.gross_loss_kes)}</p></div>
         <div><p className="text-xs text-white/65">Net retained loss</p><p className="mt-2 text-2xl font-semibold tabular-nums">{amount(result.net_loss_kes)}</p></div>
       </div>
-      <p className="mt-5 text-xs text-white/70">{allZero ? 'All five hazard rasters have zero signal at this document point. The Ksh 0 model loss does not establish that the property is flood safe.' : 'This is a single-property, single-occurrence calculation. Gross and net amounts depend on the reviewed policy and treaty inputs.'}</p>
+      <p className="mt-5 text-xs text-white/70">{allZero ? 'All five hazard rasters have zero signal at this document point. The Ksh 0 model loss does not establish that the property is flood safe.' : selectedTierHasNoSignal ? `The selected 1-in-${scenario?.return_period_years} proxy tier has no signal at this point, so its modelled physical loss is zero. The 1-in-${firstPositiveScenario?.return_period_years} tier has a positive signal and ${amount(firstPositiveScenario?.ground_up_loss_kes ?? 0)} illustrative physical loss. Zero here does not establish flood safety.` : 'This is a single-property, single-occurrence calculation. Gross and net amounts depend on the reviewed policy and treaty inputs.'}</p>
       {floodExcluded && <p className="mt-2 text-xs text-white/70">The uploaded offer excludes flood unless cover is separately agreed.</p>}
     </section>
 

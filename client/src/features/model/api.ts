@@ -39,6 +39,17 @@ export const fetchCapabilities = () => apiFetch('/api/capabilities').then(json<{
 export const previewExposure = (free_text: string) => apiFetch('/api/exposure/preview', {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ free_text }),
 }).then(json<ExposurePreview>)
+export const transcribeExposure = (file: File, signal?: AbortSignal) => {
+  const body = new FormData()
+  body.append('file', file)
+  return apiFetch('/api/exposure/transcribe', { method: 'POST', body, signal }).then(json<{ text: string; model: string }>)
+}
+export type VoiceTurn = { role: 'user' | 'assistant'; content: string }
+export const askVoice = (history: VoiceTurn[], runId: string | null, propertyCalculation: PropertyCalculation | null, signal?: AbortSignal) => apiFetch('/api/voice/chat', {
+  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ history: history.slice(-12), run_id: runId, property_calculation: propertyCalculation }),
+  signal,
+}).then(json<{ answer: string; provider: string; model: string }>)
 export const previewCoordinates = (file: File, previewId: string) => {
   const body = new FormData()
   body.append('file', file)

@@ -51,7 +51,7 @@ def simulated_ep(scenarios: list[dict], total_tiv_kes: float, *, years: int = 10
         'seed': seed,
         'gross_only': True,
         'points': [
-            {'return_period_years': int(period), 'annual_exceedance': 1 / period,
+            {'return_period_years': int(period), 'annual_exceedance': float(1 / period),
              'simulated_loss_kes': float(value), 'p05_kes': float(lo), 'p95_kes': float(hi),
              'extrapolated': bool(period > periods[-1])}
             for period, value, lo, hi in zip(target_periods, estimate, low, high)

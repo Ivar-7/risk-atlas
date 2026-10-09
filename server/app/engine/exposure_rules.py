@@ -35,11 +35,18 @@ def _count(text: str) -> tuple[int, bool]:
     if match:
         count = int(match.group(1))
         return count, 1 <= count <= 80
+    spoken = re.search(r"\b(twenty|thirty|forty|fifty|sixty|seventy|eighty)(?:[ -](one|two|three|four|five|six|seven|eight|nine))?\s+(?:[a-z][a-z -]*?\s+)?(?:buildings?|houses?|dwellings?|units?|properties|shops?)\b", text.lower())
+    if spoken:
+        count = {'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80}[spoken.group(1)]
+        count += {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9}.get(spoken.group(2) or '', 0)
+        return count, 1 <= count <= 80
     return 0, False
 
 
 def _tiv(text: str) -> tuple[float, bool]:
     match = re.search(r"\b(?:kes|kshs?|ksh)\s*([0-9][0-9,]*(?:\.\d+)?)\s*(m|million|bn|billion)?\b", text.lower())
+    if not match:
+        match = re.search(r"\b([0-9][0-9,]*(?:\.\d+)?)\s*(kenyan\s+shillings?|shillings?|kes|kshs?)\b", text.lower())
     if not match:
         return 0.0, False
     per_building = re.search(r"\b(each|apiece|per\s+(?:building|house|unit|property|dwelling))\b", text.lower())

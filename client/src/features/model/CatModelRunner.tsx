@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createRun, previewCoordinates, previewExposure } from './api'
 import type { CoordinatePreview, ExposurePreview, RunResult } from './types'
 import { clsLabel, money } from './format'
+import VoiceExposureInput from './VoiceExposureInput'
 
 const exampleOffer = 'Synthetic residential offer for a Nairobi flood CAT demonstration. The schedule contains 25 informal iron-sheet houses in Kibera. Each building has an insured value of KES 800,000.'
 
@@ -21,6 +22,7 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
   const [approved, setApproved] = useState(false)
   const [busy, setBusy] = useState<'preview' | 'run' | null>(null)
   const [error, setError] = useState('')
+  const [voiceBusy, setVoiceBusy] = useState(false)
 
   function changeText(value: string) {
     setFreeText(value)
@@ -111,14 +113,19 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
       id="portfolio-text"
       value={freeText}
       onChange={(event) => changeText(event.target.value)}
-      disabled={busy !== null}
+      disabled={busy !== null || voiceBusy}
       maxLength={4000}
       rows={4}
       placeholder="25 informal iron-sheet houses in Kibera, KES 800000 each"
       className="mt-2 w-full rounded-lg border border-input-border bg-surface p-3 text-sm text-text outline-none placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60"
     />
     <p className="mt-1 text-xs text-text-muted">Count, construction class, named neighbourhood and insured value per building are required. New locations are synthetic points near the named centre.</p>
-    <button type="button" onClick={() => changeText(exampleOffer)} disabled={busy !== null} className="mt-2 text-xs font-semibold text-accent underline disabled:opacity-50">Load synthetic residential offer example</button>
+    <VoiceExposureInput disabled={busy !== null} onBusyChange={setVoiceBusy} onTranscript={(text) => {
+      const next = freeText.trim() ? `${freeText.trim()} ${text}` : text
+      if (next.length > 4000) setError('The spoken offer exceeds the 4,000-character limit. Shorten the text before previewing.')
+      else changeText(next)
+    }} />
+    <button type="button" onClick={() => changeText(exampleOffer)} disabled={busy !== null || voiceBusy} className="mt-2 text-xs font-semibold text-accent underline disabled:opacity-50">Load synthetic residential offer example</button>
 
     <fieldset className="mt-5 rounded-lg border border-border p-4">
       <legend className="px-1 text-sm font-semibold">Assumed property policy terms</legend>
@@ -142,13 +149,13 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
       </div>}
     </fieldset>
 
-    {hasText && <button type="button" onClick={() => void review()} disabled={busy !== null} className="mt-4 rounded-lg border border-accent px-4 py-2 text-sm font-semibold text-accent hover:bg-danger-tint disabled:opacity-50">
+    {hasText && <button type="button" onClick={() => void review()} disabled={busy !== null || voiceBusy} className="mt-4 rounded-lg border border-accent px-4 py-2 text-sm font-semibold text-accent hover:bg-danger-tint disabled:opacity-50">
       {busy === 'preview' ? 'Extracting…' : preview ? 'Preview again' : 'Preview exposure'}
     </button>}
 
     {preview && <div className="mt-5 rounded-lg border border-border bg-surface-alt p-4" aria-label="Exposure preview">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><h3 className="text-sm font-semibold">Review extracted exposure</h3><p className="mt-1 text-xs text-text-muted">{preview.source === 'openai' ? `AI extraction${preview.model ? ` · ${preview.model}` : ''}` : 'Rules extraction · no AI used'} · {preview.rows_added} buildings · {money(preview.total_tiv_kes)} added TIV</p></div>
+        <div><h3 className="text-sm font-semibold">Review extracted exposure</h3><p className="mt-1 text-xs text-text-muted">{['openai', 'gemini'].includes(preview.source) ? `AI extraction${preview.model ? ` · ${preview.model}` : ''}` : 'Rules extraction · no AI used'} · {preview.rows_added} buildings · {money(preview.total_tiv_kes)} added TIV</p></div>
       </div>
       {preview.groups.length > 0 && <div className="mt-4 overflow-x-auto"><table className="w-full min-w-120 text-left text-xs"><thead><tr className="border-b border-border text-text-muted"><th className="py-2">Construction</th><th>Place</th><th className="text-right">Count</th><th className="text-right">Value each</th><th className="text-right">Total</th></tr></thead><tbody>{preview.groups.map((group, index) => <tr key={`${group.place}-${index}`} className="border-b border-border/60"><td className="py-2">{clsLabel(group.housing_class)}</td><td>{group.place}</td><td className="text-right">{group.count}</td><td className="text-right">{money(group.tiv_each_kes)}</td><td className="text-right">{money(group.total_tiv_kes)}</td></tr>)}</tbody></table></div>}
       {preview.notes.map((note, index) => <p key={`${index}-${note}`} className="mt-2 text-xs text-text-muted">{note}</p>)}
@@ -159,7 +166,7 @@ export default function CatModelRunner({ onRun }: { onRun: (run: RunResult) => v
 
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={applyDrainage} onChange={(event) => setApplyDrainage(event.target.checked)} disabled={busy !== null} className="accent-accent" />Include unvalidated drainage sensitivity in this run</label>
-      <button type="button" onClick={() => void runModel()} disabled={busy !== null || !validTerms || (hasText && (!reviewable || !approved || Boolean(coordinateFile && (!coordinatePreview || !coordinatesApproved))))} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">{busy === 'run' ? 'Running model…' : 'Run flood model'}</button>
+      <button type="button" onClick={() => void runModel()} disabled={busy !== null || voiceBusy || !validTerms || (hasText && (!reviewable || !approved || Boolean(coordinateFile && (!coordinatePreview || !coordinatesApproved))))} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">{busy === 'run' ? 'Running model…' : 'Run flood model'}</button>
     </div>
     {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
   </section>

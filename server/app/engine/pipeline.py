@@ -300,7 +300,7 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
             "drainage_delta_1_in_100_kes": loss_100["drainage_sensitivity_loss_kes"] - loss_100["baseline_loss_kes"],
             "effect": (
                 "The optional drainage uplift is an unvalidated sensitivity constructed around proxy-missed hotspot centres; those same centres cannot show improved predictive accuracy. "
-                + ("Model-extracted, reviewed exposure changes TIV and loss. " if parse_meta["source"] == "openai" and len(extra) else "No model-backed exposure was used in this run. ")
+                + ("Model-extracted, reviewed exposure changes TIV and loss. " if parse_meta["source"] in {"openai", "gemini"} and len(extra) else "No model-backed exposure was used in this run. ")
                 + "SHAP explains a surrogate after the loss calculation."
             ),
         },

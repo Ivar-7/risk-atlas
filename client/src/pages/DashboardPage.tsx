@@ -10,6 +10,7 @@ import { DashboardSidebar, dashboardSections, type DashboardSectionId } from '..
 import DashboardLoader from '../components/ui/v-skeleton-8'
 import CatModelRunner from '../features/model/CatModelRunner'
 const ModelWorkspace = lazy(() => import('./ModelWorkspace'))
+const VoiceInteractionPage = lazy(() => import('./VoiceInteractionPage'))
 import { fetchLatest, refreshSavedRun, setApiTokenGetter, type DocumentAssessment, type PropertyCalculation } from '../features/model/api'
 import { money } from '../features/model/format'
 import type { RunResult } from '../features/model/types'
@@ -24,6 +25,7 @@ const sectionDescriptions: Record<DashboardSectionId, string> = {
   'ai-evidence': 'Inspect the contribution of reviewed model extraction and the deterministic drainage rule.',
   assumptions: 'Review the inputs, provenance, and assumptions behind this run.',
   workspace: 'Set portfolio terms, run the model, or review a separate property document.',
+  'voice-interaction': 'Ask about the current underwriter results by voice or text.',
 }
 
 function timeGreeting() {
@@ -128,6 +130,7 @@ export default function DashboardPage() {
   const activeTitle = dashboardSections.find((section) => section.id === activeSection)?.label ?? 'Overview'
   const needsRerun = error.includes('saved portfolio run') || error.includes('model API is missing')
   const showRunError = error && activeSection !== 'workspace' && !(activeSection === 'overview' && summaryTarget === 'property' && propertyCalculation)
+  const resultsSection = activeSection !== 'workspace' && activeSection !== 'voice-interaction' && activeSection !== 'overview'
 
   if (loading && !run) return <DashboardLoader />
 
@@ -149,26 +152,27 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main id="overview" className="mx-auto max-w-[1600px] scroll-mt-20 px-5 pb-24 pt-7 sm:px-7 lg:pb-12 xl:px-9">
-        <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <main id="overview" className={activeSection === 'voice-interaction' ? 'h-[calc(100dvh-3.5rem)] w-full overflow-hidden' : 'mx-auto max-w-[1600px] scroll-mt-20 px-5 pb-24 pt-7 sm:px-7 lg:pb-12 xl:px-9'}>
+        {activeSection !== 'voice-interaction' && <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div><p className="text-[11px] font-medium uppercase tracking-[0.16em] text-accent">Risk Atlas workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{activeTitle}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{sectionDescriptions[activeSection]}</p></div>
           {activeSection === 'overview' && (propertyCalculation || run?.interventions.free_text.rows_added) && <button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover">Review model inputs</button>}
           {run && activeSection === 'portfolio' && <button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover">Run another model</button>}
-          {run && activeSection !== 'workspace' && activeSection !== 'overview' && activeSection !== 'portfolio' && <span className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted"><BarChart3 size={15} />{run.scenarios.length} assumed scenarios</span>}
-        </div>
+          {run && resultsSection && activeSection !== 'portfolio' && <span className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-muted"><BarChart3 size={15} />{run.scenarios.length} assumed scenarios</span>}
+        </div>}
 
-        {run && activeSection !== 'workspace' && activeSection !== 'overview' && activeSection !== 'portfolio' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
+        {run && resultsSection && activeSection !== 'portfolio' && <section className="mb-5 flex flex-wrap items-center justify-between gap-5 rounded-xl border border-border bg-surface p-5 shadow-dashboard sm:p-6" aria-label="Current model run">
           <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Model run</p><h2 className="mt-2 text-lg font-semibold">Current run</h2><p className="mt-2 text-xs font-medium text-accent">Synthetic portfolio · proxy flood hazard · illustrative return periods</p><p className="mt-3 text-sm text-text-muted">Gross insured AAL <strong className="text-text">{money(run.metrics.aal_kes)}</strong> · {run.metrics.locations} locations</p></div>
           <div className="flex items-center gap-3"><button type="button" onClick={() => void reload()} disabled={loading} className="flex items-center gap-2 rounded-md border border-brand-navy/20 bg-surface px-3 py-2 text-sm text-text hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw size={15} />Refresh</button><button type="button" onClick={() => navigateSection('workspace')} className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">Run model</button></div>
         </section>}
-        {showRunError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>{error}</span><div className="flex gap-4">{needsRerun && <button type="button" onClick={() => navigateSection('workspace')} className="underline">Run updated model</button>}<button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div></div>}
+        {showRunError && activeSection !== 'voice-interaction' && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/25 bg-danger-tint p-6 text-sm text-danger"><span>{error}</span><div className="flex gap-4">{needsRerun && <button type="button" onClick={() => navigateSection('workspace')} className="underline">Run updated model</button>}<button type="button" onClick={() => void reload()} className="flex items-center gap-2 underline"><RefreshCw size={15} />Retry</button></div></div>}
         {activeSection === 'workspace' && <div className="space-y-8"><CatModelRunner onRun={acceptRun} /><div className="border-t border-border pt-7"><Suspense fallback={<DashboardLoader />}><ModelWorkspace assessment={assessment} calculation={propertyCalculation} onReviewed={setAssessment} onCalculated={acceptPropertyCalculation} onInvalidated={() => setPropertyCalculation(null)} /></Suspense></div></div>}
+        {activeSection === 'voice-interaction' && <Suspense fallback={null}><VoiceInteractionPage run={run} calculation={propertyCalculation} /></Suspense>}
         {activeSection === 'overview' && (summaryTarget === 'property'
           ? <PropertyUnderwritingSummary calculation={propertyCalculation} onNavigate={navigateSection} />
           : run?.interventions.free_text.rows_added
             ? <SubmittedExposureSummary run={run} onNavigate={navigateSection} />
             : <PropertyUnderwritingSummary calculation={null} onNavigate={navigateSection} />)}
-        {run && activeSection !== 'workspace' && activeSection !== 'overview' && <section aria-label={`${activeTitle} dashboard section`}><Dashboard run={run} activeSection={activeSection} onNavigate={navigateSection} /></section>}
+        {run && resultsSection && <section aria-label={`${activeTitle} dashboard section`}><Dashboard run={run} activeSection={activeSection} onNavigate={navigateSection} /></section>}
       </main>
     </div>
 

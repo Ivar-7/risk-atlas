@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   Activity, ArrowLeft, BrainCircuit, ChevronDown, ChevronRight, Info, Layers3,
-  LayoutDashboard, MapPinned, Search, ShieldCheck, Waves,
+  LayoutDashboard, MapPinned, Mic2, Search, ShieldCheck, Waves,
 } from 'lucide-react'
 import type { RunResult } from '../../features/model/types'
 
@@ -15,6 +15,7 @@ export const dashboardSections = [
   { id: 'ai-evidence', label: 'AI evidence', icon: BrainCircuit },
   { id: 'assumptions', label: 'Assumptions', icon: Info },
   { id: 'workspace', label: 'Model workspace', icon: ShieldCheck },
+  { id: 'voice-interaction', label: 'Voice interaction', icon: Mic2 },
 ] as const
 
 export type DashboardSectionId = (typeof dashboardSections)[number]['id']
@@ -87,6 +88,7 @@ export function DashboardSidebar({ activeId, run, onNavigate, onSearch }: Props)
       <div className="space-y-0.5">
         <button type="button" onClick={onSearch} className="group flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] tracking-wide text-text-muted transition-colors hover:bg-surface-alt hover:text-text"><Search size={16} strokeWidth={1.5} /> <span className="flex-1">Search</span><kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] text-text-muted group-hover:inline-flex">⌘K</kbd></button>
         <NavLink id="workspace" activeId={activeId} onNavigate={navigate} />
+        <NavLink id="voice-interaction" activeId={activeId} onNavigate={navigate} />
         <NavLink id="overview" activeId={activeId} onNavigate={navigate} />
       </div>
       <NavGroup title="Loss analysis">

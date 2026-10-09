@@ -29,14 +29,14 @@ export function AiEvidence({ run }: { run: RunResult }) {
   return <div className="space-y-4">
     <Panel className="p-5 sm:p-6"><PanelHeading eyebrow="Model contribution" title="What changed in this run" description="Separate model-backed extraction from the deterministic drainage rule." />
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-surface p-4"><p className="text-xs text-text-muted">Exposure extraction {source === 'openai' && <span className="ml-1 text-[10px] font-normal">AI-generated</span>}</p><p className="mt-2 text-lg font-semibold">{source === 'openai' ? 'Model-backed and reviewed' : source === 'rules' ? 'Validated rules' : 'No added exposure'}</p><p className="mt-1 text-xs text-text-muted">{run.interventions.free_text.rows_added} sample rows added</p></div>
+        <div className="rounded-lg border border-border bg-surface p-4"><p className="text-xs text-text-muted">Exposure extraction {['openai', 'gemini'].includes(source) && <span className="ml-1 text-[10px] font-normal">AI-generated</span>}</p><p className="mt-2 text-lg font-semibold">{['openai', 'gemini'].includes(source) ? 'Model-backed and reviewed' : source === 'rules' ? 'Validated rules' : 'No added exposure'}</p><p className="mt-1 text-xs text-text-muted">{run.interventions.free_text.rows_added} sample rows added</p></div>
         <div className="rounded-lg border border-border bg-surface p-4"><p className="text-xs text-text-muted">Added exposure effect · 1-in-100</p><p className="mt-2 text-lg font-semibold">{money(run.metrics.exposure_delta_1_in_100_kes)}</p><p className="mt-1 text-xs text-text-muted">Against the same model run without added rows</p></div>
         <div className="rounded-lg border border-border bg-surface p-4"><p className="text-xs text-text-muted">Unvalidated drainage sensitivity · 1-in-100</p><p className="mt-2 text-lg font-semibold">{money(run.metrics.drainage_delta_1_in_100_kes)}</p><p className="mt-1 text-xs text-text-muted">{run.controls.apply_drainage_correction ? 'Included in this run' : 'Comparison only'} · {run.interventions.drainage.sensitivity_buildings_uplifted} locations would be uplifted</p></div>
       </div>
       <p className="mt-5 text-sm leading-6 text-text-muted">{presentModelText(run.interventions.effect)}</p>
       {review?.reviewed && <div className="mt-5 rounded-lg border border-border bg-surface p-4 text-xs">
         <p className="font-semibold">Reviewed extraction record</p>
-        <p className="mt-2 text-text-muted">{review.source === 'openai' ? `OpenAI model: ${review.model ?? 'unknown'} · response: ${review.response_id ?? 'unknown'}` : 'Rules extraction · no AI model'}</p>
+        <p className="mt-2 text-text-muted">{['openai', 'gemini'].includes(review.source) ? `${review.source} model: ${review.model ?? 'unknown'} · response: ${review.response_id ?? 'unknown'}` : 'Rules extraction · no AI model'}</p>
         <p className="mt-1 text-text-muted">Reviewed {new Date(review.reviewed_at).toLocaleString()}</p>
         <p className="mt-3 font-medium">Offer text supplied</p>
         <p className="mt-1 whitespace-pre-wrap text-text-muted">{review.input_text}</p>

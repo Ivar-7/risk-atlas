@@ -93,15 +93,23 @@ are illustrative assumptions informed by the JRC Africa residential reference;
 the score is not converted to flood depth. See `docs/assumptions.md` for the
 full matrix and the source-tier naming caveat.
 
-Free-text exposure must be previewed before a run. Without an API key, the
-preview uses strict rules and is labelled as such. For model-backed structured
-extraction, set `OPENAI_API_KEY` in `server/.env` and optionally
-`RISK_ATLAS_OPENAI_MODEL` (default `gpt-4o-mini`). The backend calls the
-OpenAI Responses API; the key stays server-side. The user reviews extracted
+Free-text exposure must be previewed before a run. Without a configured key, the
+preview uses strict rules and is labelled as such. Set `RISK_ATLAS_AI_PROVIDER`
+to `openai` or `gemini` in `server/.env`. Configure the matching `OPENAI_API_KEY`
+or `GEMINI_API_KEY`, and optionally `RISK_ATLAS_OPENAI_MODEL` (default
+`gpt-4o-mini`) or `RISK_ATLAS_GEMINI_MODEL` (default `gemini-2.5-flash`).
+The backend keeps the key server-side. The user reviews extracted
 count, class, named place, and value before those synthetic rows change the
 loss curve. The optional drainage rule is a deterministic, unvalidated sensitivity,
 not AI. It is off by default. Its uplift is centred on the same proxy-missed
 hotspots used to construct it, so those points do not validate predictive accuracy.
+
+The dashboard voice interaction records a question when the microphone is toggled
+on, then transcribes and answers it when toggled off. It uses the current
+authenticated portfolio run and, when available, the active property loss
+calculation. Spoken answers use browser speech synthesis. The
+assistant explains modelled results and assumptions; it does not make an
+underwriting decision.
 
 The map's transparent proxy layers are generated from the supplied GeoTIFFs
 with `python3 scripts/build_proxy_overlays.py` (requires Pillow and numpy).

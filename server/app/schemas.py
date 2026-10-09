@@ -1,8 +1,20 @@
 from pydantic import BaseModel, Field, model_validator
+from typing import Literal
 
 
 class PreviewRequest(BaseModel):
     free_text: str = Field(max_length=4000)
+
+
+class VoiceTurn(BaseModel):
+    role: Literal['user', 'assistant']
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class VoiceChatRequest(BaseModel):
+    run_id: str | None = None
+    history: list[VoiceTurn] = Field(min_length=1, max_length=12)
+    property_calculation: dict | None = None
 
 
 class RunRequest(BaseModel):
