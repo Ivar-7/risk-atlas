@@ -92,6 +92,10 @@ fixed damage ratio for the building class, while zero selects 0%. The ratios
 are illustrative assumptions informed by the JRC Africa residential reference;
 the score is not converted to flood depth. See `docs/assumptions.md` for the
 full matrix and the source-tier naming caveat.
+Scenario names now follow common 1-in-10, occasional 1-in-25, moderate 1-in-50,
+severe 1-in-100, and extreme 1-in-250. The supplied proxy file names describe
+footprints in the opposite order; the model records the source mask used for
+each scenario.
 
 Free-text exposure must be previewed before a run. Without a configured key, the
 preview uses strict rules and is labelled as such. Set `RISK_ATLAS_AI_PROVIDER`
@@ -137,6 +141,9 @@ hazard and vulnerability assumptions.
 
 The current application and development tools are listed in
 [`docs/tooling_inventory.md`](docs/tooling_inventory.md).
+
+The analysis engines and their data flow are shown in
+[`docs/model_workflow.md`](docs/model_workflow.md).
 
 The short hackathon write-up is in [`docs/submission_note.md`](docs/submission_note.md).
 

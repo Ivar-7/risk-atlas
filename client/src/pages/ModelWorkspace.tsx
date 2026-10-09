@@ -24,7 +24,7 @@ function deductibleFromDocument(value: string | undefined, groundUpLoss: number 
   const rate = value?.match(/(\d+(?:\.\d+)?)\s*%/)
   return rate && groundUpLoss !== undefined ? (Math.round(groundUpLoss * Number(rate[1])) / 100).toFixed(2) : ''
 }
-function initialTerms(assessment: DocumentAssessment, tier = 'occasional'): LossTerms {
+function initialTerms(assessment: DocumentAssessment, tier = 'severe'): LossTerms {
   const f = assessment.fields
   const model = assessment.financial_model
   const modelledLoss = model?.scenarios.find((scenario) => scenario.tier === tier)?.ground_up_loss_kes
@@ -50,7 +50,20 @@ function PropertyMap({ evidence, name }: { evidence: NonNullable<DocumentAssessm
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors', maxZoom: 19,
     }).addTo(map)
-    L.marker(point).bindPopup(`${name}<br>${evidence.latitude}, ${evidence.longitude}`).addTo(map)
+    const icon = L.divIcon({
+      className: '',
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40" aria-hidden="true"><path d="M16 2a13 13 0 0 0-13 13c0 9.5 13 22 13 22s13-12.5 13-22A13 13 0 0 0 16 2Z" fill="var(--color-accent)" stroke="white" stroke-width="2"/><circle cx="16" cy="15" r="5" fill="white"/></svg>',
+      iconSize: [32, 40],
+      iconAnchor: [16, 37],
+      popupAnchor: [0, -34],
+    })
+    const popup = document.createElement('div')
+    const title = document.createElement('strong')
+    title.textContent = name
+    const coordinates = document.createElement('div')
+    coordinates.textContent = `${evidence.latitude}, ${evidence.longitude}`
+    popup.append(title, coordinates)
+    L.marker(point, { icon }).bindPopup(popup).addTo(map)
     return () => { map.remove() }
   }, [evidence.latitude, evidence.longitude, name])
   return <div ref={node} className="h-82.5 w-full rounded-xl bg-surface-alt" aria-label={`Map pin at ${evidence.latitude}, ${evidence.longitude}`} />
@@ -71,8 +84,8 @@ export default function ModelWorkspace({ assessment, calculation, onReviewed, on
   const [busy, setBusy] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
-  const [selectedTier, setSelectedTier] = useState(calculation?.tier ?? 'occasional')
-  const reviewDocument = (next: DocumentAssessment) => { setSelectedTier('occasional'); setTerms(initialTerms(next)); setResult(null); setConfirmed(false); setError(''); onInvalidated(); onReviewed(next) }
+  const [selectedTier, setSelectedTier] = useState(calculation?.tier ?? 'severe')
+  const reviewDocument = (next: DocumentAssessment) => { setSelectedTier('severe'); setTerms(initialTerms(next)); setResult(null); setConfirmed(false); setError(''); onInvalidated(); onReviewed(next) }
   const update = (patch: Partial<LossTerms>) => { setTerms((current) => ({ ...current, ...patch })); setResult(null); setConfirmed(false); onInvalidated() }
   async function calculate() {
     setBusy(true); setError('')

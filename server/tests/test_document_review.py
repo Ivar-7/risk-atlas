@@ -76,7 +76,10 @@ class DocumentReviewTests(unittest.TestCase):
             'total_insured_value': {'value': '1,000,000'},
             'construction': {'value': 'RCC frame'},
         }
-        evidence = {'proxy_covered': True, 'tiers': {tier: 0.5 for tier in ('common', 'occasional', 'moderate', 'severe', 'extreme')}}
+        evidence = {'proxy_covered': True, 'tiers': dict(zip(
+            ('common', 'occasional', 'moderate', 'severe', 'extreme'),
+            (0.11, 0.22, 0.33, 0.44, 0.55),
+        ))}
         model = _modelled_financial_scenarios(fields, evidence)
         self.assertEqual(model['tiv_kes'], 1_000_000)
         self.assertEqual([row['return_period_years'] for row in model['scenarios']], [10, 25, 50, 100, 250])
@@ -85,7 +88,8 @@ class DocumentReviewTests(unittest.TestCase):
             ('severe', 'occasional'), ('extreme', 'common'),
         ])
         for scenario in model['scenarios']:
-            expected_ratio = damage_ratio(scenario['tier'], np.array([0.5]), np.array(['concrete_rcc']), load_parameters())[0]
+            self.assertEqual(scenario['hazard_score'], evidence['tiers'][scenario['source_tier']])
+            expected_ratio = damage_ratio(scenario['tier'], np.array([scenario['hazard_score']]), np.array(['concrete_rcc']), load_parameters())[0]
             self.assertAlmostEqual(scenario['damage_ratio'], expected_ratio)
             self.assertEqual(scenario['ground_up_loss_kes'], round(expected_ratio * 1_000_000, 2))
 

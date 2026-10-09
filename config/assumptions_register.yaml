@@ -42,7 +42,7 @@ assumptions:
   - id: HAZ-003
     provenance: ASSUMPTION
     title: Unvalidated drainage sensitivity
-    statement: "Optional deterministic distance kernel around the 12 common-proxy-missed named hotspot centres. Disabled in the default run. The same centres define the uplift and cannot independently validate improved prediction. Its loss difference is an unvalidated sensitivity, not measured drainage or an accuracy gain."
+    statement: "Optional deterministic distance kernel around the 12 supplied-common-proxy-missed named hotspot centres. Disabled in the default run. The same centres define the uplift and cannot independently validate improved prediction. Its loss difference is an unvalidated sensitivity, not measured drainage or an accuracy gain."
   - id: AI-001
     provenance: CONDITIONAL
     title: Reviewed free-text exposure
