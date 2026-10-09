@@ -79,7 +79,7 @@ export type DocumentAssessment = {
     housing_class: string
     basis: string
     construction_warning: string
-    scenarios: Array<{ tier: string; return_period_years: number; annual_exceedance: number; hazard_score: number; damage_ratio: number; ground_up_loss_kes: number }>
+    scenarios: Array<{ tier: string; source_tier: string; return_period_years: number; annual_exceedance: number; hazard_score: number; damage_ratio: number; ground_up_loss_kes: number }>
   } | null
   advice: { status: string; summary: string; checks: string[] }
   limitations: string[]

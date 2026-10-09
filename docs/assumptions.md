@@ -10,28 +10,28 @@ The reference is Huizinga, de Moel & Szewczyk (2017), *Global flood depth-damage
 
 The matrix, ordered by this model's assumed event size, is:
 
-| Building class | extreme (10y) | severe (25y) | moderate (50y) | occasional (100y) | common (250y) |
+| Building class | common (10y) | occasional (25y) | moderate (50y) | severe (100y) | extreme (250y) |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Informal iron sheet | 8% | 25% | 55% | 75% | 85% |
 | Semi-permanent | 4% | 16% | 38% | 56% | 69% |
 | Permanent masonry | 2% | 10% | 24% | 37% | 52% |
 | Concrete RCC | 1% | 4% | 12% | 21% | 31% |
 
-The source file names are counterintuitive here: `common` is the widest mask and was previously assigned the largest assumed event, while `extreme` is the narrowest and was assigned the smallest. The matrix preserves that existing mapping so aggregate scenario losses remain ordered. Its percentages were chosen as illustrative steps with low initial damage, faster increases in the middle tiers, and construction-specific upper values, using the JRC curve's general progression as a reference. They are not direct JRC values or locally calibrated building damage functions. The positive-score cutoff is also an assumption: any tiny positive score receives the full tier ratio, an important limitation of the categorical method. The JRC residential reference also includes contents/inventory in its underlying source values, so applying an assumed fraction to synthetic building TIV is an uncalibrated simplification.
+The scenario names now match the usual progression from common to extreme. Their percentages are unchanged by event size: only the tier labels were corrected. These remain illustrative steps, not direct JRC values or locally calibrated building damage functions. The positive-score cutoff is also an assumption: any tiny positive score receives the full tier ratio, an important limitation of the categorical method. The JRC residential reference also includes contents/inventory in its underlying source values, so applying an assumed fraction to synthetic building TIV is an uncalibrated simplification.
 
-| Starter proxy mask | Assumed return period |
-| --- | ---: |
-| extreme (narrowest) | 10 years |
-| severe | 25 years |
-| moderate | 50 years |
-| occasional | 100 years |
-| common (widest) | 250 years |
+| Scenario tier | Assumed return period | Supplied proxy mask used |
+| --- | ---: | --- |
+| common | 10 years | extreme (narrowest) |
+| occasional | 25 years | severe |
+| moderate | 50 years | moderate |
+| severe | 100 years | occasional |
+| extreme | 250 years | common (widest) |
 
-The mask names describe the supplied files, not the assigned frequency. Wider masks contain more locations and produce larger losses, so they are mapped to rarer events for a monotone illustrative exceedance probability curve. This mapping is a modeling choice, not rainfall frequency evidence. Annual average loss is integrated from that discrete curve.
+The supplied file names describe ranked susceptibility masks, not return periods. The files' footprint order is opposite to the requested scenario-name order, so the model maps each scenario to the source mask shown above. Wider masks contain more locations and produce larger losses; this preserves a monotone illustrative exceedance probability curve. It is a modelling choice, not rainfall frequency evidence. Annual average loss is integrated from that discrete curve. The input CSV and GeoTIFF names remain unchanged for provenance.
 
 Scenario detail also shows a **conditional gross-loss simulation**, separate from the five modelled gross/net points. It draws 10,000 independent synthetic annual maximum losses by inverting the assumed five-point gross EP relationship (years without a 1-in-10 or rarer event have zero loss), interpolates loss linearly in log return period between anchors, and extrapolates beyond 250 years using the final log-period slope, capped at total portfolio TIV. The display reports empirical loss quantiles at 10–10,000 years and 5th–95th percentiles from 200 bootstrap resamples of those simulated years, with a fixed seed. The 1-in-500 and rarer values are **tail extrapolations**, not extra hazard scenarios. The band measures finite-sample variation conditional on the assumed event rates and losses; it excludes uncertainty in hazard, frequencies, damage ratios, exposure, and financial terms. It is not a calibrated insurance confidence interval or a priced 1-in-500 loss.
 
-The optional drainage rule increases proxy scores near the 12 common-proxy-missed named hotspot centres using a deterministic distance kernel. It is disabled in the default run. The uplifted run is an **unvalidated sensitivity**: the same centres were used to build the rule, so improved scores or losses at those centres cannot demonstrate predictive accuracy. No independent flood observations, site-level claims, or drainage-network evidence is supplied for validation. The comparison uses identical exposure and policy terms, with and without the rule; its loss difference is an assumption-driven scenario effect, not an estimated correction to real losses. The corrected scores are constrained to increase with assumed event rarity. The common raster detects 12 of 24 approximate geocoded hotspot centres, with 13 of 37 county-named areas lacking coordinates in the kit. Free-text ingestion uses strict rules unless `OPENAI_API_KEY` enables model-backed structured extraction. Every accepted exposure group is previewed and creates only synthetic rows. SHAP explains a surrogate of location annual average loss; the physics-based loss calculation remains authoritative.
+The optional drainage rule increases proxy scores near the 12 common-proxy-missed named hotspot centres using a deterministic distance kernel. It is disabled in the default run. The uplifted run is an **unvalidated sensitivity**: the same centres were used to build the rule, so improved scores or losses at those centres cannot demonstrate predictive accuracy. No independent flood observations, site-level claims, or drainage-network evidence is supplied for validation. The comparison uses identical exposure and policy terms, with and without the rule; its loss difference is an assumption-driven scenario effect, not an estimated correction to real losses. The corrected scores are constrained to increase with assumed event rarity. The common raster detects 12 of 24 approximate geocoded hotspot centres, with 13 of 37 county-named areas lacking coordinates in the kit. Free-text ingestion uses strict rules unless the selected Gemini or OpenAI provider has a configured API key for model-backed structured extraction. Every accepted exposure group is previewed and creates only synthetic rows. SHAP explains a surrogate of location annual average loss; the physics-based loss calculation remains authoritative.
 
 The supplied exposure CSVs now total KES 6,363,470,000, matching the data dictionary. Every row is checked against floor area × cost per square metre, within KES 2,500 of rounding. The dashboard's return-period sensitivity values are alternate assumptions, distinct from the conditional simulation's sampling band.
 

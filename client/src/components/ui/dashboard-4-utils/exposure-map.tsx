@@ -84,14 +84,14 @@ export function ExposureMap({ run, scenario }: {
     if (!layer || !instance) return
     layer.clearLayers()
     if (overlay.current) instance.removeLayer(overlay.current)
-    overlay.current = L.imageOverlay(`/assets/proxy-${scenario.tier}.png`, [[-1.45, 36.6], [-1.1, 37.0]], { opacity: 0.65, interactive: false }).addTo(instance)
+    overlay.current = L.imageOverlay(`/assets/proxy-${scenario.source_tier}.png`, [[-1.45, 36.6], [-1.1, 37.0]], { opacity: 0.65, interactive: false }).addTo(instance)
     overlay.current.bringToBack()
     const bounds: L.LatLngTuple[] = []
     const hotspotMarkers: L.CircleMarker[] = []
     const maxTiv = Math.max(...run.locations.map((location) => location.tiv_kes).filter(Number.isFinite), 1)
     for (const hotspot of run.hotspots) {
       if (!Number.isFinite(hotspot.lat) || !Number.isFinite(hotspot.lon)) continue
-      const detected = (hotspot.proxy_scores?.[scenario.tier] ?? 0) > 0
+      const detected = (hotspot.proxy_scores?.[scenario.source_tier] ?? 0) > 0
       hotspotMarkers.push(L.circleMarker([hotspot.lat, hotspot.lon], {
         radius: 8, color: detected ? chartTheme.success : chartTheme.danger, weight: 1.5, fillColor: detected ? chartTheme.success : chartTheme.danger, fillOpacity: 0.2,
       }).bindTooltip(`${hotspot.name} · ${detected ? 'proxy detects centre' : 'proxy misses centre'}`).addTo(layer))
@@ -125,7 +125,7 @@ export function ExposureMap({ run, scenario }: {
       <PanelHeading
         eyebrow="Exposure"
         title="Nairobi portfolio map"
-        description={`Sample locations and the ${scenario.tier} susceptibility proxy over OpenStreetMap. The blue raster is not measured flood water.`}
+        description={`Sample locations for the ${scenario.tier} scenario, using the supplied ${scenario.source_tier} proxy raster over OpenStreetMap. The raster is not measured flood water.`}
         action={<span className="rounded-full border border-accent/20 bg-danger-tint px-3 py-1.5 text-[11px] text-danger">{scenario.affected_locations} affected</span>}
       />
       <div ref={container} className="mt-5 h-105 w-full overflow-hidden rounded-xl border border-border bg-surface-alt sm:h-130" role="application" aria-label="Interactive Nairobi portfolio map" />

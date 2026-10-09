@@ -96,10 +96,11 @@ def _modelled_financial_scenarios(fields: dict, evidence: dict | None) -> dict |
     params = load_parameters()
     scenarios = []
     for tier, spec in sorted(params['return_periods'].items(), key=lambda item: item[1]['years']):
-        score = float(evidence['tiers'][tier])
+        score = float(evidence['tiers'][spec['source_tier']])
         ratio = float(damage_ratio(tier, np.array([score]), np.array([klass]), params)[0])
         scenarios.append({
             'tier': tier,
+            'source_tier': spec['source_tier'],
             'return_period_years': spec['years'],
             'annual_exceedance': spec['annual_exceedance'],
             'hazard_score': score,

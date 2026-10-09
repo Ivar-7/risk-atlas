@@ -1,6 +1,6 @@
 model:
   name: Nairobi Urban Flood CAT
-  version: "1.3.0"
+  version: "1.4.0"
   peril: pluvial flood
   region: Nairobi, Kenya
   currency: KES
@@ -16,13 +16,15 @@ defaults:
   cat_xol_applies: false
 
 # ASSUMPTION — the five rasters have no return-period years attached (problem statement Step 4).
-# Wider masks produce larger losses. Map them to rarer events so the assumed EP curve is monotone.
+# Source mask names run from widest (common) to narrowest (extreme). Map them
+# to scenario names in reverse so 10y is common and 250y is extreme while
+# affected footprints and loss still grow with assumed event rarity.
 return_periods:
-  common: { years: 250, annual_exceedance: 0.004, meaning: "Widest proxy mask, assumed rarest event" }
-  occasional: { years: 100, annual_exceedance: 0.01, meaning: "1-in-100 reference loss" }
-  moderate: { years: 50, annual_exceedance: 0.02, meaning: "Intermediate proxy mask, assumed 1-in-50 event" }
-  severe: { years: 25, annual_exceedance: 0.04, meaning: "Narrow proxy mask, assumed 1-in-25 event" }
-  extreme: { years: 10, annual_exceedance: 0.10, meaning: "Narrowest proxy mask, assumed most frequent event" }
+  common: { years: 10, annual_exceedance: 0.10, source_tier: extreme, meaning: "Most frequent assumed event; narrowest supplied proxy mask" }
+  occasional: { years: 25, annual_exceedance: 0.04, source_tier: severe, meaning: "Assumed 1-in-25 event; supplied severe proxy mask" }
+  moderate: { years: 50, annual_exceedance: 0.02, source_tier: moderate, meaning: "Assumed 1-in-50 event; supplied moderate proxy mask" }
+  severe: { years: 100, annual_exceedance: 0.01, source_tier: occasional, meaning: "Assumed 1-in-100 event; supplied occasional proxy mask" }
+  extreme: { years: 250, annual_exceedance: 0.004, source_tier: common, meaning: "Rarest assumed event; widest supplied proxy mask" }
 
 # The supplied 0–1 score determines whether a building is inside each tier's
 # proxy footprint. Positive scores use the class × tier matrix below; zero uses 0.
@@ -33,9 +35,7 @@ hazard:
 # SOURCE REFERENCE — Huizinga et al. (2017), Table 3-1, printed p. 12 (PDF p. 16).
 # ASSUMPTION — the fixed ratios below are illustrative categorical adaptations,
 # not values published by JRC or calibrated Kenya claims curves. The source tier
-# names follow the starter files; the values increase with this model's assumed
-# event order (extreme 10y -> common 250y), which reverses the ordinary reading
-# of those names because the common mask is widest.
+# names below are scenario names. Source mask names are mapped separately above.
 vulnerability:
   source: "Huizinga, de Moel & Szewczyk (2017), Global flood depth-damage functions, EUR 28552 EN, Table 3-1, p. 12"
   source_url: "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC105688/global_flood_depth-damage_functions__10042017.pdf#page=16"
@@ -51,16 +51,16 @@ vulnerability:
     - { depth_m: 6.0, damage_factor: 1.0 }
   classes:
     informal_iron_sheet:
-      tier_damage_ratios: { extreme: 0.08, severe: 0.25, moderate: 0.55, occasional: 0.75, common: 0.85 }
+      tier_damage_ratios: { common: 0.08, occasional: 0.25, moderate: 0.55, severe: 0.75, extreme: 0.85 }
       differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 85% ceiling is assumed, not a JRC iron-sheet curve."
     semi_permanent:
-      tier_damage_ratios: { extreme: 0.04, severe: 0.16, moderate: 0.38, occasional: 0.56, common: 0.69 }
+      tier_damage_ratios: { common: 0.04, occasional: 0.16, moderate: 0.38, severe: 0.56, extreme: 0.69 }
       differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 69% ceiling is assumed, not a JRC semi-permanent curve."
     permanent_masonry:
-      tier_damage_ratios: { extreme: 0.02, severe: 0.10, moderate: 0.24, occasional: 0.37, common: 0.52 }
+      tier_damage_ratios: { common: 0.02, occasional: 0.10, moderate: 0.24, severe: 0.37, extreme: 0.52 }
       differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 52% ceiling is assumed, not a JRC masonry curve."
     concrete_rcc:
-      tier_damage_ratios: { extreme: 0.01, severe: 0.04, moderate: 0.12, occasional: 0.21, common: 0.31 }
+      tier_damage_ratios: { common: 0.01, occasional: 0.04, moderate: 0.12, severe: 0.21, extreme: 0.31 }
       differs_from_jrc: "Illustrative fixed class-by-tier ratios; the 31% ceiling is assumed, not a JRC RCC curve."
 
 # Unvalidated drainage sensitivity — uses the brief's stated proxy limitation
@@ -69,8 +69,8 @@ drainage_rule:
   kernel_sigma_km: 1.2
 # ASSUMPTION: the uplift grows with the assumed event footprint so rarer events cannot have lower hazard.
   tier_scale:
-    common: 0.35
-    occasional: 0.28
+    common: 0.08
+    occasional: 0.12
     moderate: 0.20
-    severe: 0.12
-    extreme: 0.08
+    severe: 0.28
+    extreme: 0.35

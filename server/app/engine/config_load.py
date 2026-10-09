@@ -28,3 +28,8 @@ def scenario_order(parameters: dict[str, Any] | None = None) -> list[str]:
     params = parameters or load_parameters()
     items = params["return_periods"].items()
     return [name for name, _ in sorted(items, key=lambda kv: kv[1]["years"])]
+
+
+def source_tier_for(scenario: str, parameters: dict[str, Any] | None = None) -> str:
+    params = parameters or load_parameters()
+    return str(params['return_periods'][scenario]['source_tier'])

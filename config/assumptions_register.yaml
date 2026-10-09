@@ -18,7 +18,7 @@ assumptions:
   - id: HAZ-002
     provenance: ASSUMPTION
     title: Return periods on the five tiers
-    statement: "extreme=10y, severe=25y, moderate=50y, occasional=100y, common=250y, matching the dataset metadata reference mapping. The masks do not carry years. Wider masks are assigned rarer events to make an illustrative EP curve; this is not calibrated frequency evidence."
+    statement: "Scenario names follow common=10y, occasional=25y, moderate=50y, severe=100y, extreme=250y. The supplied files name footprints in the opposite order: extreme, severe, moderate, occasional, common respectively. These reversed source masks keep losses increasing with assumed event rarity; the files do not carry measured return periods."
   - id: VUL-001
     provenance: SOURCED
     title: JRC Africa residential table
@@ -26,7 +26,7 @@ assumptions:
   - id: VUL-002
     provenance: ASSUMPTION
     title: Five-tier construction damage matrix
-    statement: "Fixed percentages for informal, semi-permanent, masonry and RCC at extreme/severe/moderate/occasional/common source tiers are listed in model_parameters.yaml. They rise with this prototype's assumed event order and peak at 85%, 69%, 52% and 31% respectively. JRC Africa residential depth-damage values inform the shape, but these tier percentages are assumptions, not JRC class curves or calibrated Kenya claims estimates."
+    statement: "Fixed percentages for informal, semi-permanent, masonry and RCC at common/occasional/moderate/severe/extreme scenario tiers are listed in model_parameters.yaml. They rise with this prototype's assumed event order and peak at 85%, 69%, 52% and 31% respectively. JRC Africa residential depth-damage values inform the shape, but these tier percentages are assumptions, not JRC class curves or calibrated Kenya claims estimates."
   - id: FIN-001
     provenance: METHOD
     title: Ground-up and insured loss
@@ -46,4 +46,4 @@ assumptions:
   - id: AI-001
     provenance: CONDITIONAL
     title: Reviewed free-text exposure
-    statement: "When OpenAI extraction is configured and its structured output is reviewed, model-extracted sample buildings change total exposure and loss. Without that service, strict rules can preview explicit values but are not AI."
+    statement: "When the selected Gemini or OpenAI extraction is configured and its structured output is reviewed, model-extracted sample buildings change total exposure and loss. Without the selected service, strict rules can preview explicit values but are not AI."

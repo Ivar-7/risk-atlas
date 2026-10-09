@@ -135,6 +135,9 @@ hazard and vulnerability assumptions.
 - `docs/`    API contract and modelling assumptions
 - `config/` model parameters and assumptions register
 
+The current application and development tools are listed in
+[`docs/tooling_inventory.md`](docs/tooling_inventory.md).
+
 The short hackathon write-up is in [`docs/submission_note.md`](docs/submission_note.md).
 
 ## Deploy the API to Heroku
@@ -152,8 +155,9 @@ app directory. Keeping the repository root also makes the API's `config/` and
 3. On the app's **Settings** tab, select **Reveal Config Vars** and add
 	`CLERK_ISSUER` and `RISK_ATLAS_CORS_ORIGINS` for the hosted frontend.
 	Add `DATABASE_URL` using your PostgreSQL connection string if runs must
-	persist across dyno restarts. Set `OPENAI_API_KEY` only if model-backed
-	exposure extraction is required. Keep all secret values out of Git.
+	persist across dyno restarts. For model-backed exposure extraction and voice
+	answers, set `RISK_ATLAS_AI_PROVIDER` and the matching `GEMINI_API_KEY` or
+	`OPENAI_API_KEY`. Keep all secret values out of Git.
 4. Return to **Deploy** and click **Deploy Branch**. For a Git-connected app,
 	Heroku will build the root `requirements.txt` and use the root `Procfile`.
 5. In **More** > **View logs**, confirm the release starts. Open

@@ -60,6 +60,7 @@ export type RunResult = {
   metrics: Record<string, number>;
   scenarios: Array<{
     tier: string;
+    source_tier: string;
     return_period_years: number;
     annual_exceedance: number;
     meaning: string;
@@ -76,6 +77,7 @@ export type RunResult = {
   }>;
   ep_curve: Array<{
     tier: string;
+    source_tier: string;
     return_period_years: number;
     annual_exceedance: number;
     loss_kes: number;

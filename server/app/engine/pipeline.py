@@ -12,7 +12,7 @@ from app.engine.drainage_rule import apply_drainage_correction
 from app.engine.exposure_rules import exposure_from_groups, parse_free_text
 from app.engine.coordinate_schedule import coordinate_exposure, validate_coordinate_rows
 from app.engine.briefing import underwriter_briefing
-from app.engine.config_load import load_assumptions, load_parameters, scenario_order
+from app.engine.config_load import load_assumptions, load_parameters, scenario_order, source_tier_for
 from app.engine.financial import insured_losses, location_aal, portfolio_aal, portfolio_reinsurance, scenario_losses
 from app.engine.hazard_validation import hotspot_validation, proxy_score
 from app.engine.geo import haversine_km
@@ -41,7 +41,8 @@ def _fill_hazard_from_rasters(extra: pd.DataFrame, names: list[str]) -> pd.DataF
     filled = extra.copy()
     for name in names:
         col = f"hazard_score_{name}"
-        filled[col] = [proxy_score(float(row["lat"]), float(row["lon"]), name) for _, row in extra.iterrows()]
+        source_tier = source_tier_for(name)
+        filled[col] = [proxy_score(float(row["lat"]), float(row["lon"]), source_tier) for _, row in extra.iterrows()]
     return filled
 
 
@@ -133,6 +134,7 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
         scenarios.append(
             {
                 "tier": name,
+                "source_tier": spec["source_tier"],
                 "return_period_years": spec["years"],
                 "annual_exceedance": spec["annual_exceedance"],
                 "meaning": spec["meaning"],
@@ -240,7 +242,7 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
             "exposure": f"{synthetic_count} of {len(corrected)} rows are sample exposure records from the input CSV or free-text parser; provenance is not independently verified",
             "hotspots": f"{len(data.hotspots)} geocoded named hotspots from the input CSV",
             "hazard": "PROXY (not measured flood depth)",
-            "severity_mapping": "ASSUMPTION (positive score activates the fixed construction × source-tier damage ratio; zero score gives zero damage)",
+            "severity_mapping": "ASSUMPTION (positive mapped proxy score activates the fixed construction × scenario-tier damage ratio; zero score gives zero damage)",
             "return_periods": "ASSUMPTION (tiers have no years in the kit)",
             "drainage": "UNVALIDATED SENSITIVITY; uplift centres are the proxy-missed hotspots used to construct the rule, so their uplift is not an independent accuracy test",
             "vulnerability": "ASSUMED five-tier construction damage matrix, informed by the JRC Africa residential reference",
@@ -269,12 +271,13 @@ def run_model(payload: dict[str, Any] | None = None, ingested: IngestedData | No
             "net_loss_1_in_250_kes": loss_250["net_loss_kes"],
             "baseline_1_in_100_kes": loss_100["baseline_loss_kes"],
             "drainage_delta_1_in_100_kes": loss_100["drainage_sensitivity_loss_kes"] - loss_100["baseline_loss_kes"],
-            "exposure_delta_1_in_100_kes": loss_100["loss_kes"] - float(original_losses["occasional"].sum()),
+            "exposure_delta_1_in_100_kes": loss_100["loss_kes"] - float(original_losses[loss_100["tier"]].sum()),
         },
         "scenarios": scenarios,
         "ep_curve": [
             {
                 "tier": s["tier"],
+                "source_tier": s["source_tier"],
                 "return_period_years": s["return_period_years"],
                 "annual_exceedance": s["annual_exceedance"],
                 "loss_kes": s["loss_kes"],

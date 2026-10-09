@@ -7,6 +7,16 @@ export function validateDashboardRun(run: RunResult): void {
   if (!Array.isArray(run.scenarios) || !Array.isArray(run.locations) || !Array.isArray(run.ep_curve) || !Array.isArray(run.by_housing_class) || !Array.isArray(run.hotspots)) {
     throw new Error('The model API returned an incomplete run')
   }
+  const expectedScenarios: Record<string, [number, string]> = {
+    common: [10, 'extreme'], occasional: [25, 'severe'], moderate: [50, 'moderate'],
+    severe: [100, 'occasional'], extreme: [250, 'common'],
+  }
+  if (run.scenarios.length !== 5 || run.scenarios.some((scenario) => {
+    const expected = expectedScenarios[scenario.tier]
+    return !expected || scenario.return_period_years !== expected[0] || scenario.source_tier !== expected[1]
+  })) {
+    throw new Error('The saved portfolio run uses the previous scenario mapping. Run the portfolio model again to update it.')
+  }
   if (!Number.isFinite(run.metrics?.synthetic_locations) || !Number.isFinite(run.metrics?.locations)) {
     throw new Error('The model API is missing portfolio provenance counts')
   }

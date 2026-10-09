@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from app.engine.config_load import load_parameters
+from app.engine.config_load import load_parameters, scenario_order, source_tier_for
 from app.engine.geo import attach_hotspots
 from app.engine.hazard_validation import proxy_point_covered
 from app.paths import DATA_DIR, EXPOSURE_PATH, HOTSPOTS_PATH
@@ -89,6 +89,11 @@ def load_portfolio() -> IngestedData:
         if invalid_value.any():
             example = exposure.loc[invalid_value, "loc_id"].iloc[0]
             raise ValueError(f"Starter TIV does not match floor area × rebuilding cost (within KES 2,500 rounding) at {example}")
+    # Input columns retain the supplied file names; model columns use the
+    # common→extreme scenario order documented in model_parameters.yaml.
+    source_scores = {name: exposure[f'hazard_score_{name}'].copy() for name in scenario_order()}
+    for scenario in scenario_order():
+        exposure[f'hazard_score_{scenario}'] = source_scores[source_tier_for(scenario)]
     hotspots = pd.read_csv(HOTSPOTS_PATH)
     exposure = attach_hotspots(exposure, hotspots)
     return IngestedData(

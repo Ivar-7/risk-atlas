@@ -64,8 +64,8 @@ class AiExposureDemoTests(unittest.TestCase):
         before, after = comparison["without_added"], comparison["with_added"]
         self.assertEqual(after["locations"] - before["locations"], 25)
         self.assertEqual(after["total_tiv_kes"] - before["total_tiv_kes"], 20_000_000)
-        self.assertGreater(after["scenarios"]["occasional"], before["scenarios"]["occasional"])
-        self.assertAlmostEqual(after["scenarios"]["occasional"] - before["scenarios"]["occasional"], result["metrics"]["exposure_delta_1_in_100_kes"])
+        self.assertGreater(after["scenarios"]["severe"], before["scenarios"]["severe"])
+        self.assertAlmostEqual(after["scenarios"]["severe"] - before["scenarios"]["severe"], result["metrics"]["exposure_delta_1_in_100_kes"])
 
 
 if __name__ == "__main__":

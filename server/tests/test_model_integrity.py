@@ -14,6 +14,7 @@ from app.engine.hazard_validation import _raster, hotspot_validation, proxy_poin
 from app.engine.ingestion import load_portfolio
 from app.engine.pipeline import run_model
 from app.engine.vulnerability import damage_ratio
+from app.paths import EXPOSURE_PATH
 from app.schemas import RunRequest
 
 
@@ -25,6 +26,11 @@ class ModelIntegrityTests(unittest.TestCase):
     def test_exposure_matches_data_dictionary(self):
         self.assertEqual(self.data.row_count, 600)
         self.assertEqual(self.data.total_tiv_kes, 6_363_470_000)
+        raw = pd.read_csv(EXPOSURE_PATH).iloc[0]
+        mapped = self.data.exposure.iloc[0]
+        self.assertEqual(mapped['hazard_score_common'], raw['hazard_score_extreme'])
+        self.assertEqual(mapped['hazard_score_severe'], raw['hazard_score_occasional'])
+        self.assertEqual(mapped['hazard_score_extreme'], raw['hazard_score_common'])
 
     def test_scaled_starter_value_is_rejected(self):
         original_read_csv = pd.read_csv
@@ -93,6 +99,8 @@ class ModelIntegrityTests(unittest.TestCase):
         losses = [item['loss_kes'] for item in result['scenarios']]
         self.assertEqual(losses, sorted(losses))
         self.assertEqual([item['return_period_years'] for item in result['scenarios']], [10, 25, 50, 100, 250])
+        self.assertEqual([item['tier'] for item in result['scenarios']], ['common', 'occasional', 'moderate', 'severe', 'extreme'])
+        self.assertEqual([item['source_tier'] for item in result['scenarios']], ['extreme', 'severe', 'moderate', 'occasional', 'common'])
         self.assertEqual(result['metrics']['total_tiv_kes'], 6_363_470_000)
 
     def test_property_deductible_and_limit_then_portfolio_aggregation(self):

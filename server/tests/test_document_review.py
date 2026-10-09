@@ -80,6 +80,10 @@ class DocumentReviewTests(unittest.TestCase):
         model = _modelled_financial_scenarios(fields, evidence)
         self.assertEqual(model['tiv_kes'], 1_000_000)
         self.assertEqual([row['return_period_years'] for row in model['scenarios']], [10, 25, 50, 100, 250])
+        self.assertEqual([(row['tier'], row['source_tier']) for row in model['scenarios']], [
+            ('common', 'extreme'), ('occasional', 'severe'), ('moderate', 'moderate'),
+            ('severe', 'occasional'), ('extreme', 'common'),
+        ])
         for scenario in model['scenarios']:
             expected_ratio = damage_ratio(scenario['tier'], np.array([0.5]), np.array(['concrete_rcc']), load_parameters())[0]
             self.assertAlmostEqual(scenario['damage_ratio'], expected_ratio)
