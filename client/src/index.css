@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "Inter", system-ui, sans-serif;
+
+  --color-bg: #F4F6FA;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #EAF0F8;
+  --color-border: #E3E7EE;
+  --color-text: #10294F;
+  --color-text-muted: #5B6B85;
+  --color-accent: #D8184B;
+  --color-accent-hover: #B8123D;
+  --color-on-accent: #FFFFFF;
+  --color-focus: #10294F;
+  --color-input-border: #D4DAE5;
+  --color-brand-navy: #10294F;
+  --color-brand-crimson: #D8184B;
+  --color-brand-grey: #B5B8BD;
+  --color-steel-blue: #3B5A8C;
+  --color-success: #1E7F5C;
+  --color-success-tint: #E8F4EE;
+  --color-warning: #A15C00;
+  --color-warning-tint: #FFF3DF;
+  --color-danger: #B3123A;
+  --color-danger-tint: #FBE9EE;
+  --color-sequential-low: #FDE8EE;
+  --color-sequential-mid: #D8184B;
+  --color-sequential-high: #7A0C28;
+  --shadow-dashboard: 0 1px 2px rgba(16, 41, 79, 0.06), 0 8px 24px rgba(16, 41, 79, 0.05);
+
+  /* Legacy application tokens remain available outside the dashboard. */
+  --color-background: #0a0a0a;
+  --color-foreground: #f4f5f4;
+  --color-card: #141416;
+  --color-card-foreground: #f4f5f4;
+  --color-popover: #141416;
+  --color-popover-foreground: #f4f5f4;
+  --color-primary: #a7f3d0;
+  --color-primary-foreground: #050807;
+  --color-secondary: #1c1d1f;
+  --color-secondary-foreground: #f4f5f4;
+  --color-muted: #16181a;
+  --color-muted-foreground: #9ba3a0;
+  --color-accent: #1f2124;
+  --color-accent-foreground: #f4f5f4;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #1a0505;
+  --color-border: #26282b;
+  --color-input: #2e3134;
+  --color-ring: #a78bfa;
+
+  --radius-lg: 0.625rem;
+  --radius-md: calc(0.625rem - 2px);
+  --radius-sm: calc(0.625rem - 4px);
+}
+
+/* shadcn's Button relies on these being defined at the element level. */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+:root {
+  color-scheme: light;
+  font-family: "Inter", system-ui, sans-serif;
+  color: #fff;
+  background: #0a0a0a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dashboard-theme {
+  color-scheme: light;
+  --color-accent: var(--color-brand-crimson);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: var(--color-on-accent);
+  --color-secondary: var(--color-surface-alt);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted: var(--color-surface-alt);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-surface);
+  --color-border: #E3E7EE;
+  --color-input: var(--color-input-border);
+  --color-ring: var(--color-focus);
+}
+
+.dashboard-theme :is(input:not([type="checkbox"]), textarea, select) {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-input-border);
+}
+
+.dashboard-theme :is(input, textarea)::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dashboard-theme :is(input, textarea, select):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dashboard-theme table {
+  border-collapse: collapse;
+}
+
+.dashboard-theme thead {
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-alt);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-theme thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.625rem;
+  background-color: var(--color-surface-alt);
+}
+
+.dashboard-theme tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 120ms ease;
+}
+
+.dashboard-theme tbody tr:hover {
+  background-color: var(--color-bg);
+}
+
+.dashboard-theme :is(.leaflet-tooltip, .leaflet-popup-content-wrapper, .leaflet-popup-tip) {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-dashboard);
+}
+
+.dashboard-theme .risk-location-popup .leaflet-popup-content-wrapper,
+.dashboard-theme .risk-location-popup .leaflet-popup-tip {
+  color: #f8fafc;
+  background: #17231e;
+  border-color: #17231e;
+}
+
+.dashboard-theme .risk-location-popup .leaflet-popup-content {
+  min-width: 210px;
+  margin: 13px 16px;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.dashboard-theme .risk-location-popup .leaflet-popup-close-button {
+  color: #f8fafc;
+}
+
+.risk-location-popup-title {
+  display: block;
+  padding-right: 12px;
+  font-size: 13px;
+}
+
+.risk-location-popup-id {
+  margin-bottom: 8px;
+  color: #a8b8ae;
+  font-size: 11px;
+}
+
+.risk-location-popup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 3px;
+}
+
+.risk-location-popup-row span { color: #b8c7bd; }
+.risk-location-popup-row strong { font-weight: 600; text-align: right; white-space: nowrap; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; }
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+::selection { background: rgba(255, 255, 255, 0.2); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+@media print {
+  #landing-header *,
+  #hero-content *,
+  #landing-sections *,
+  #landing-footer * {
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
